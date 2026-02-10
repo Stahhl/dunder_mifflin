@@ -1,0 +1,97 @@
+# Dunder Mifflin Observability Architecture (OpenTelemetry)
+
+This document details the observability strategy for Dunder Mifflin Scranton. We will utilize the **OpenTelemetry (OTel)** stack to achieve full visibility into our distributed system—logs, metrics, and distributed traces—from the user's click to the final database transaction.
+
+## Core Components
+
+### 1. Instrumentation (The "Wiretap")
+*   **Frontend (Browser):**
+    *   **Library:** `@opentelemetry/sdk-trace-web` & `@opentelemetry/instrumentation-document-load`.
+    *   **Role:** Captures user interactions (button clicks, page loads), fetch/XHR requests, and unhandled errors.
+    *   **Context:** Injects `traceparent` headers into outgoing HTTP requests to the Gateway.
+    *   **Metadata:** Adds user attributes (`user.id: mscott`, `role: manager`) to spans.
+
+*   **Gateway (Spring Boot):**
+    *   **Library:** `opentelemetry-javaagent.jar` (Auto-instrumentation).
+    *   **Role:** The entry point for backend traces. Connects the frontend trace ID to the backend service calls.
+    *   **Spans:** Incoming HTTP request -> Auth Check -> Outgoing Proxy Request.
+
+*   **Backend Microservices (Node.js/Go/Python):**
+    *   **Library:** Language-specific OTel SDKs (e.g., `@opentelemetry/sdk-node`).
+    *   **Role:** Traces internal logic, database queries, and message publishing.
+    *   **Spans:** Controller Handler -> Service Logic -> DB Query / Kafka Publish.
+
+*   **Message Bus (Kafka/RabbitMQ):**
+    *   **Library:** Client-side instrumentation (e.g., `opentelemetry-instrumentation-kafkajs`).
+    *   **Role:** Propagates context *through* the message queue.
+    *   **Spans:** Producer `send` -> Consumer `process`.
+    *   **Context Propagation:** Trace IDs are embedded in message headers.
+
+*   **Database (PostgreSQL/Redis):**
+    *   **Library:** Driver instrumentation (e.g., `opentelemetry-instrumentation-pg`).
+    *   **Role:** Measures query performance and errors.
+    *   **Spans:** `db.statement: SELECT * FROM clients WHERE name = 'Blue Cross'`.
+
+### 2. Collection & Processing (The "Toby" of Data)
+*   **OpenTelemetry Collector:**
+    *   **Role:** A centralized agent (sidecar or standalone service) that receives telemetry data from all services.
+    *   **Pipelines:**
+        *   **Receivers:** OTLP (gRPC/HTTP).
+        *   **Processors:**
+            *   `batch`: Batches data for efficiency.
+            *   `memory_limiter`: Prevents OOM crashes.
+            *   `attributes`: Scrubs sensitive data (PII) like social security numbers or Jan's candle scents.
+        *   **Exporters:** Sends processed data to backend storage (Prometheus, Jaeger, Loki).
+
+### 3. Backend Storage & Visualization (The "Big Picture")
+
+#### A. Tracing (The Journey)
+*   **Tool:** **Jaeger** or **Tempo**.
+*   **Visualization:** A Gantt chart showing the request lifecycle.
+*   **Example:** User clicks "Buy Paper" -> Gateway (10ms) -> Sales Service (50ms) -> Postgres (5ms) -> Kafka (2ms) -> Inventory Service (20ms).
+
+#### B. Metrics (The Scoreboard)
+*   **Tool:** **Prometheus** (Storage) + **Grafana** (Dashboards).
+*   **Key Metrics:**
+    *   **RED Method:** Rate (Requests/sec), Errors (500s), Duration (Latency).
+    *   **Business Metrics:** "Paper Reams Sold", "Complaints Filed", "Beets Harvested".
+
+#### C. Logs (The Paper Trail)
+*   **Tool:** **Loki** (PLG Stack: Promtail + Loki + Grafana).
+*   **Integration:** Logs are correlated with Traces via `trace_id`.
+*   **Format:** Structured JSON logs.
+*   **Example:** `{"level": "error", "msg": "Insufficient stock", "trace_id": "12345", "service": "inventory"}`.
+
+---
+
+## Detailed Trace Flow: "The Golden Ticket" (Order Processing)
+
+1.  **User Action:** Michael clicks "Issue Golden Ticket" on the Portal.
+    *   *Frontend:* Generates Trace ID `T1`, Span ID `S1`. Sends POST to Gateway.
+2.  **Gateway:** Receives request.
+    *   *Extracts:* Trace ID `T1`.
+    *   *Creates:* Span ID `S2` (Child of `S1`).
+    *   *Action:* Proxies to `sales-service`.
+3.  **Sales Service:** Receives request.
+    *   *Extracts:* Trace ID `T1`.
+    *   *Creates:* Span ID `S3` (Child of `S2`).
+    *   *Action:* Saves to DB (Span `S4`), Publishes `ticket.issued` event to Kafka (Span `S5`).
+4.  **Kafka:** Queues the message.
+5.  **Inventory Service:** Consumes `ticket.issued`.
+    *   *Extracts:* Trace ID `T1` from message headers.
+    *   *Creates:* Span ID `S6` (Child of `S5` - *Follows From*).
+    *   *Action:* Updates stock.
+6.  **WUPHF Service:** Consumes `ticket.issued`.
+    *   *Extracts:* Trace ID `T1`.
+    *   *Creates:* Span ID `S7` (Child of `S5`).
+    *   *Action:* Sends email to Corporate.
+
+---
+
+## Infrastructure Stack (Docker Compose)
+
+*   `otel-collector`: The central processor.
+*   `jaeger`: Distributed tracing backend.
+*   `prometheus`: Metrics database.
+*   `loki`: Log aggregation system.
+*   `grafana`: Unified dashboard for Traces, Metrics, and Logs.
