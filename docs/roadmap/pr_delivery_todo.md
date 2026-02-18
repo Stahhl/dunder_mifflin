@@ -52,6 +52,7 @@ This roadmap breaks work into sequential PRs. Each PR is sized to be reviewable 
 
 **Scope**
 - Bootstrap Expo app and auth flow.
+- Use direct Keycloak Authorization Code + PKCE for mobile login.
 - Add scanner screen and pending shipment list.
 - Mark shipment as loaded/dispatched.
 
@@ -66,7 +67,7 @@ This roadmap breaks work into sequential PRs. Each PR is sized to be reviewable 
 **Scope**
 - Add status timeline to Infinity order details.
 - Consume backend status transitions (`RESERVED`, `SHIPPED`, `FAILED_INSUFFICIENT_STOCK`).
-- Add polling (10s interval) or event-driven client updates.
+- Add event-driven client updates (SSE through gateway).
 
 **Acceptance**
 - Shipment status change in warehouse reflects in sales within **15 seconds** end-to-end.

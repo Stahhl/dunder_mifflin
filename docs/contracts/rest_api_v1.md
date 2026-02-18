@@ -163,6 +163,22 @@ Returns full order detail including current status and shipment ID.
 }
 ```
 
+### `GET /orders/{orderId}/stream`
+Server-Sent Events stream for real-time order status updates.
+
+Event name: `order.status.changed`
+
+SSE data payload:
+
+```json
+{
+  "orderId": "ord_9001",
+  "status": "SHIPPED",
+  "at": "2026-02-18T20:45:11Z",
+  "source": "inventory-service"
+}
+```
+
 ## 5. Warehouse Shipments
 
 ### `GET /warehouse/shipments?status=PENDING`

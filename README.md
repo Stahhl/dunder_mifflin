@@ -43,7 +43,7 @@ This repository contains the implementation plan and delivery docs for a demo ER
 - Docker Compose v2
 - Java 21
 - Node.js 20+
-- pnpm or npm
+- pnpm
 
 ## Current State
 

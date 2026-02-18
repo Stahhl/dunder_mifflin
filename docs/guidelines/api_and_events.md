@@ -13,6 +13,7 @@
 - Breaking changes require `/api/v2`.
 - Error envelope is standardized across services.
 - Pagination uses `page`, `size`, `sort` query params.
+- Live UX updates use SSE endpoints exposed by gateway (for example `/orders/{orderId}/stream`).
 
 ## 3. Event Standards
 
