@@ -1,6 +1,6 @@
 # Event Catalog (Demo v1)
 
-Format: CloudEvents 1.0 JSON over Kafka.
+Format: CloudEvents 1.0 JSON messages over RabbitMQ (AMQP 0-9-1).
 
 ## 1. Envelope
 
@@ -17,24 +17,28 @@ Format: CloudEvents 1.0 JSON over Kafka.
 }
 ```
 
-## 2. Topics
+## 2. Broker Topology
 
-| Topic | Producer | Primary Consumers |
+- Exchange: `dm.domain.events` (type: `topic`, durable)
+- Dead-letter exchange: `dm.domain.events.dlx` (type: `topic`, durable)
+- Delivery mode: persistent
+- Delivery semantics: at-least-once with consumer acknowledgements
+
+### Queue Bindings
+
+| Queue | Primary Consumer | Binding Routing Keys |
 |---|---|---|
-| `dm.sales.leads` | `sales-service` | `order-service`, `wuphf-service` |
-| `dm.orders.lifecycle` | `order-service` | `inventory-service`, `wuphf-service` |
-| `dm.inventory.shipments` | `inventory-service` | `order-service`, `wuphf-service` |
-| `dm.finance.expenses` | `finance-service` | `wuphf-service` |
-| `dm.notifications` | `wuphf-service` | notification read model |
-
-Partition key: domain aggregate ID (`leadId`, `orderId`, `shipmentId`, `expenseId`).
+| `inventory.order-events.q` | `inventory-service` | `order.created.v1` |
+| `order.inventory-events.q` | `order-service` | `inventory.stock.*.v1`, `shipment.dispatched.v1` |
+| `wuphf.domain-events.q` | `wuphf-service` | `order.*.v1`, `shipment.*.v1`, `finance.expense.*.v1` |
+| `notification.readmodel.q` | notification read model | `notification.created.v1` |
 
 ## 3. Event Types
 
 ### Sales
 
 #### `com.dundermifflin.sales.lead.converted.v1`
-Topic: `dm.sales.leads`
+Routing key: `sales.lead.converted.v1`
 
 ```json
 {
@@ -48,7 +52,7 @@ Topic: `dm.sales.leads`
 ### Orders
 
 #### `com.dundermifflin.order.created.v1`
-Topic: `dm.orders.lifecycle`
+Routing key: `order.created.v1`
 
 ```json
 {
@@ -63,7 +67,7 @@ Topic: `dm.orders.lifecycle`
 ```
 
 #### `com.dundermifflin.order.status.changed.v1`
-Topic: `dm.orders.lifecycle`
+Routing key: `order.status.changed.v1`
 
 ```json
 {
@@ -79,7 +83,7 @@ Allowed status values mirror REST `Order Status` enum.
 ### Inventory and Shipment
 
 #### `com.dundermifflin.inventory.stock.reserved.v1`
-Topic: `dm.inventory.shipments`
+Routing key: `inventory.stock.reserved.v1`
 
 ```json
 {
@@ -91,7 +95,7 @@ Topic: `dm.inventory.shipments`
 ```
 
 #### `com.dundermifflin.inventory.stock.failed.v1`
-Topic: `dm.inventory.shipments`
+Routing key: `inventory.stock.failed.v1`
 
 ```json
 {
@@ -105,7 +109,7 @@ Topic: `dm.inventory.shipments`
 ```
 
 #### `com.dundermifflin.shipment.dispatched.v1`
-Topic: `dm.inventory.shipments`
+Routing key: `shipment.dispatched.v1`
 
 ```json
 {
@@ -120,7 +124,7 @@ Topic: `dm.inventory.shipments`
 ### Finance
 
 #### `com.dundermifflin.expense.submitted.v1`
-Topic: `dm.finance.expenses`
+Routing key: `finance.expense.submitted.v1`
 
 ```json
 {
@@ -133,7 +137,7 @@ Topic: `dm.finance.expenses`
 ```
 
 #### `com.dundermifflin.expense.decided.v1`
-Topic: `dm.finance.expenses`
+Routing key: `finance.expense.decided.v1`
 
 ```json
 {
@@ -148,7 +152,7 @@ Topic: `dm.finance.expenses`
 ### Notifications
 
 #### `com.dundermifflin.notification.created.v1`
-Topic: `dm.notifications`
+Routing key: `notification.created.v1`
 
 ```json
 {
@@ -162,8 +166,9 @@ Topic: `dm.notifications`
 }
 ```
 
-## 4. Versioning Rules
+## 4. Reliability and Versioning Rules
 
 - Additive changes only within `v1`.
-- Breaking change requires `v2` event type.
-- Producers may dual-publish `v1` and `v2` during transition.
+- Breaking change requires `v2` event type and routing key.
+- Consumers must be idempotent by CloudEvent `id`.
+- Failed deliveries route to DLQ; operators can manually requeue messages if needed.

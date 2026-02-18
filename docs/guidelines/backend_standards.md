@@ -14,7 +14,7 @@ This document outlines the architectural standards and implementation guidelines
 
 ## 3. Architecture Pattern: Hexagonal (Ports & Adapters)
 
-To ensure the core business logic remains isolated from infrastructure concerns (Database, Kafka, HTTP), we will adopt a **Hexagonal Architecture**.
+To ensure the core business logic remains isolated from infrastructure concerns (Database, RabbitMQ, HTTP), we will adopt a **Hexagonal Architecture**.
 
 ### Structure
 ```
@@ -31,14 +31,14 @@ src/main/kotlin/com/dundermifflin/<service-name>/
 │   └── exception/          # Global Exception Handling
 └── infrastructure/         # Implementation Layer (Outgoing Adapters)
     ├── persistence/        # Database Entities & Repositories (Spring Data JDBC/JPA)
-    ├── messaging/          # Kafka Producers/Consumers
+    ├── messaging/          # RabbitMQ publishers/consumers
     └── client/             # External API Clients (e.g., Keycloak, Third-party)
 ```
 
 ## 4. Communication & Messaging
 
 *   **Pattern:** Async Event-Driven Pub/Sub.
-*   **Message Broker:** Kafka.
+*   **Message Broker:** RabbitMQ.
 *   **Format:** CloudEvents (JSON) for standardization.
 *   **Serialization:** Jackson (Kotlin Module).
 
@@ -71,7 +71,7 @@ The build must be self-contained. A developer should be able to run `./gradlew t
 *   **Philosophy:** Do NOT mock the database or message broker in integration tests. Spin up real, disposable instances.
 *   **Implementation:**
     *   `@Testcontainers` with `PostgreSQLContainer` for DB tests.
-    *   `KafkaContainer` for messaging tests.
+    *   `RabbitMQContainer` for messaging tests.
     *   `KeycloakContainer` (Dasniko) for IAM tests.
 
 ### Architecture Tests

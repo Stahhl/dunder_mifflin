@@ -6,7 +6,7 @@ This document defines the baseline architecture used by the roadmap.
 
 - Frontend apps call a single BFF gateway.
 - Backend services are independently deployable Kotlin/Spring services.
-- Cross-service workflows use CloudEvents over Kafka.
+- Cross-service workflows use CloudEvents over RabbitMQ.
 - User-facing reads are primarily REST via gateway.
 
 ## Core Services

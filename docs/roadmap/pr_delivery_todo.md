@@ -106,7 +106,7 @@ This roadmap breaks work into sequential PRs. Each PR is sized to be reviewable 
 **Scope**
 - Add offline queue for warehouse mutations.
 - Add sync status indicators and retry handling.
-- Add idempotency keys for replay protection.
+- Add idempotency keys for retry deduplication protection.
 
 **Acceptance**
 - Warehouse user can perform shipment actions offline.
