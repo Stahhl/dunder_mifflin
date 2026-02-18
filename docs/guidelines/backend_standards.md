@@ -38,15 +38,14 @@ src/main/kotlin/com/dundermifflin/<service-name>/
 ## 4. Communication & Messaging
 
 *   **Pattern:** Async Event-Driven Pub/Sub.
-*   **Message Broker:** Kafka (or RabbitMQ).
+*   **Message Broker:** Kafka.
 *   **Format:** CloudEvents (JSON) for standardization.
 *   **Serialization:** Jackson (Kotlin Module).
 
 ### Event Standards
-Events must be domain-centric, past-tense verbs.
-*   `OrderPlacedEvent`
-*   `InventoryReservedEvent`
-*   `ComplaintFiledEvent`
+Event names and payloads must match `docs/contracts/event_catalog_v1.md`.
+Type naming pattern:
+*   `com.dundermifflin.<domain>.<action>.v<version>`
 
 ## 5. Observability (OpenTelemetry)
 
@@ -89,13 +88,14 @@ The build must be self-contained. A developer should be able to run `./gradlew t
 ## 8. Security
 
 *   **Authentication:** OAuth2 / OIDC via Keycloak.
-*   **Authorization:** Method-level security (`@PreAuthorize("hasRole('SALES')")`).
+*   **Authorization:** Method-level security using mapped roles (e.g., `@PreAuthorize("hasRole('SALES_ASSOCIATE')")`).
 *   **Secrets:** Never commit secrets. Use Environment Variables or Spring Cloud Config.
 
 ## 9. API Specifications
 
 *   **Style:** REST (Level 2/3).
 *   **Documentation:** OpenAPI 3.0 (Swagger) generated code-first via `springdoc-openapi`.
+*   **Contract alignment:** Endpoints and payloads must align with `docs/contracts/rest_api_v1.md`.
 *   **Endpoint:** `/v3/api-docs` and `/swagger-ui.html`.
 
 ## 10. Build Configuration (Gradle)

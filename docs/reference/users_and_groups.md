@@ -2,6 +2,14 @@
 
 This document outlines the organizational structure, departments, and user accounts for the Dunder Mifflin Scranton branch IT system.
 
+## Demo Auth Defaults
+
+- Seeded user password for all accounts: `password`
+- Primary PR1 test accounts:
+- Sales: `jhalpert`
+- Warehouse: `dphilbin`
+- Accounting: `amartin`
+
 ## 1. Management (Group: `management`)
 Access Level: High (Financials, HR Records, All Sales Data)
 

@@ -1,74 +1,50 @@
-# Dunder Mifflin API - Scrantonicity v2.0
+# Dunder Mifflin Demo Platform
 
-> "Limitless paper in a paperless world."
+This repository contains the implementation plan and delivery docs for a demo ERP platform themed around Dunder Mifflin Scranton.
 
-Welcome to the **Dunder Mifflin Scranton Branch** digital infrastructure. This repository contains the complete source code for our Enterprise Resource Planning (ERP) system, modernized for the streaming era.
+## Documentation Index
 
-## 📂 Documentation
+### Roadmap
+- [Product Delivery TODO (PR-by-PR)](./docs/roadmap/pr_delivery_todo.md)
 
-Before diving in, please review the following architectural plans:
+### Architecture
+- [System Overview](./docs/architecture/system_overview.md)
+- [Identity & Access](./docs/architecture/identity_access.md)
+- [Frontend Overview](./docs/architecture/frontend_overview.md)
+- [Observability Strategy](./docs/architecture/observability_strategy.md)
 
-*   **[Users & Departments](./plans/users.md):** The org chart (Who is who).
-*   **[Microservices Architecture](./plans/microservices.md):** The backend services.
-*   **[IAM Architecture](./plans/iam_architecture.md):** Security, LDAP, and Keycloak.
-*   **[Frontend Architecture](./plans/frontend_architecture.md):** The React/Angular portals.
-*   **[Observability](./plans/observability_architecture.md):** Logging and Tracing (The "Toby" of the stack).
-*   **[API Strategy](./docs/design/api_strategy.md):** How we talk to each other.
-*   **[E2E Testing](./docs/design/e2e_testing.md):** How we ensure quality.
+### Guidelines
+- [API and Event Governance](./docs/guidelines/api_and_events.md)
+- [Backend Standards](./docs/guidelines/backend_standards.md)
+- [Frontend Standards](./docs/guidelines/frontend_standards.md)
+- [Infrastructure and Deployment](./docs/guidelines/infrastructure_deployment.md)
+- [Testing Strategy](./docs/guidelines/testing_strategy.md)
 
-## 🚀 Quick Start (The "One Command")
+### Reference
+- [Users and Groups](./docs/reference/users_and_groups.md)
 
-We use Docker Compose to spin up the entire "Office" environment.
+### Contracts (Demo v1)
+- [REST API Contracts](./docs/contracts/rest_api_v1.md)
+- [Event Catalog](./docs/contracts/event_catalog_v1.md)
 
-### Prerequisites
-*   Docker & Docker Compose (V2)
-*   Java 21 (Temurin)
-*   Node.js 20+
+## Planned Repository Shape
 
-### Start the System
-```bash
-# Start everything (Backend, Frontend, Infrastructure)
-docker compose --profile app up -d
-
-# Check the logs
-docker compose logs -f
-```
-
-### Access Points
-| Service | URL | Credentials |
-|---------|-----|-------------|
-| **Portal** | http://localhost:80 | `mscott` / `password` |
-| **Keycloak** | http://localhost:8080 | `admin` / `admin` |
-| **Grafana** | http://localhost:3000 | `admin` / `admin` |
-| **MailHog** | http://localhost:8025 | (No auth) |
-
-## 🏗️ Project Structure
-
-```
+```text
 .
-├── apps/               # Frontend Applications
-│   ├── portal/         # Main Intranet
-│   └── warehouse/      # Warehouse Scanner App
-├── services/           # Backend Microservices
-│   ├── sales/          # CRM & Sales
-│   ├── inventory/      # Warehouse Management
-│   └── gateway/        # Spring Cloud Gateway
-├── libs/               # Shared Libraries
-│   └── contracts/      # CloudEvents & DTOs
-├── plans/              # Architectural Plans
-├── docs/               # Detailed Design Docs
-└── docker-compose.yml  # Orchestration
+├── apps/                 # Frontend apps (portal, infinity, accounting, warehouse-mobile)
+├── services/             # Backend services (gateway, sales, order, inventory, finance, profile, wuphf)
+├── libs/                 # Shared contracts and SDKs
+├── docs/                 # Architecture, standards, roadmap, contracts
+└── platform/             # Docker Compose, env, seed data
 ```
 
-## 🧪 Testing
+## Demo Environment Targets
 
-```bash
-# Run Unit Tests (Backend)
-./gradlew test
+- Docker Compose v2
+- Java 21
+- Node.js 20+
+- pnpm or npm
 
-# Run E2E Tests
-npm run test:e2e
-```
+## Current State
 
----
-*Maintained by the IT Department (Nick). Do not touch the server rack.*
+This repository currently focuses on planning/specification docs. Code scaffolding will follow the PR roadmap.

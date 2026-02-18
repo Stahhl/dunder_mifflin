@@ -1,76 +1,78 @@
-# Infrastructure & Deployment Design Document
+# Infrastructure and Deployment Standards
 
-## 1. Overview
-This document outlines the infrastructure strategy for running the entire Dunder Mifflin system locally and in production-like environments. The core principle is **"One Command to Rule Them All"**—a single Docker Compose configuration to spin up the complete stack.
+## 1. Goal
 
-## 2. Container Orchestration Strategy
+Run the demo platform with a single command using Docker Compose.
 
-*   **Tool:** Docker Compose (V2).
-*   **File Structure:**
-    *   `docker-compose.yml`: The master file containing all service definitions.
-    *   `docker-compose.override.yml` (Optional): For local development overrides (e.g., mounting source code volumes, exposing debugging ports).
+## 2. Compose Layout
 
-### Key Design Decisions
+- `platform/docker-compose.yml`: primary stack definition.
+- `platform/docker-compose.override.yml`: local development overrides.
+- `platform/.env.example`: documented environment variables.
+- `platform/keycloak/realm-export.json`: seeded realm config.
+- `platform/ldap/users.ldif`: seeded users/groups.
 
-1.  **Single Network:** All services will reside on a custom bridge network named `dunder_net` to allow internal DNS resolution (e.g., `ping sales-service`).
-2.  **Startup Order (`depends_on`):**
-    *   **Level 0:** Infrastructure (Postgres, Kafka, Keycloak, OTel Collector).
-    *   **Level 1:** Backend Services (Waiting for Level 0 to be healthy).
-    *   **Level 2:** Frontend / Gateway (Waiting for Level 1).
-3.  **Health Checks:** Every service MUST define a `healthcheck`. Dependent services will use `condition: service_healthy` to ensure a clean startup sequence, preventing "Connection Refused" loops.
+## 3. Runtime Profiles
 
-## 3. Service Inventory
+- `app`: full stack (frontend + backend + infra + observability).
+- `infra`: databases, broker, IAM only.
+- `observability`: otel, prometheus, loki, grafana, jaeger.
+- `e2e`: app profile plus test seed utilities.
 
-The `docker-compose.yml` will orchestrate the following:
+## 4. Service Inventory
 
-### A. Infrastructure (The "Annex")
-*   **`postgres`:** Central database (Schemas: `sales`, `inventory`, `keycloak`).
-*   **`kafka` + `zookeeper`:** Message Broker.
-*   **`keycloak`:** IAM Provider (Imports `realm-export.json` on startup).
-*   **`openldap`:** User Directory (Seeded with `users.ldif`).
-*   **`mailhog`:** SMTP Trap (Captures emails from WUPHF/Keycloak).
+### Infrastructure
+- `postgres`
+- `kafka`
+- `zookeeper`
+- `keycloak`
+- `openldap`
+- `mailhog`
 
-### B. Observability (The "Eyes")
-*   **`otel-collector`:** Receives traces/metrics.
-*   **`prometheus`:** Scrapes metrics from Collector.
-*   **`loki`:** Log aggregation.
-*   **`grafana`:** Visualizes everything (Pre-provisioned dashboards).
-*   **`jaeger`:** Trace visualization.
+### Platform Services
+- `gateway`
+- `profile-service`
+- `sales-service`
+- `order-service`
+- `inventory-service`
+- `finance-service`
+- `wuphf-service`
 
-### C. Backend Services (The "Office")
-*   **`gateway`:** Spring Cloud Gateway (Port `8080`).
-*   **`sales-service`:** (Internal Port).
-*   **`inventory-service`:** (Internal Port).
-*   **`profile-service`:** (Internal Port).
+### Frontends
+- `portal-web`
+- `infinity-web`
+- `accounting-web`
+- `warehouse-mobile` (Expo/dev profile or device build)
 
-### D. Frontend (The "Reception")
-*   **`frontend`:** NGINX serving the Angular apps (Port `80`).
+### Observability
+- `otel-collector`
+- `prometheus`
+- `loki`
+- `grafana`
+- `jaeger`
 
-## 4. Volume Management
+## 5. Environment Defaults
 
-Persistent data will be stored in named Docker volumes to survive container restarts:
-*   `postgres_data`: DB storage.
-*   `kafka_data`: Message logs.
-*   `prometheus_data`: Metrics history.
-*   `grafana_data`: Dashboard persistence.
+Required variables (example values):
+- `POSTGRES_USER=dundermifflin`
+- `POSTGRES_PASSWORD=bears_beets_battlestar`
+- `KEYCLOAK_ADMIN=admin`
+- `KEYCLOAK_ADMIN_PASSWORD=admin`
+- `KEYCLOAK_REALM=scranton-branch`
 
-## 5. Environment Configuration
+## 6. Startup and Health Rules
 
-*   **`.env` File:** Stores shared variables (versions, ports, secrets).
-    *   `POSTGRES_USER=dundermifflin`
-    *   `POSTGRES_PASSWORD=bears_beets_battlestar`
-    *   `KEYCLOAK_ADMIN=admin`
-*   **Profiles:**
-    *   `--profile app`: Runs everything.
-    *   `--profile infra`: Runs only DB, Kafka, IAM (for backend dev).
-    *   `--profile observability`: Runs only the OTel stack.
+- All services must define `healthcheck`.
+- `depends_on` must use `condition: service_healthy` where supported.
+- Gateway starts after IAM and required backend services are healthy.
+- Frontends start after gateway is healthy.
 
-## 6. Usage
+## 7. Required Commands
 
 ```bash
-# Start the entire system
-docker compose --profile app up -d
+# full demo stack
+docker compose -f platform/docker-compose.yml --profile app up -d
 
-# Start only infrastructure for backend development
-docker compose --profile infra up -d
+# infra only
+docker compose -f platform/docker-compose.yml --profile infra up -d
 ```
