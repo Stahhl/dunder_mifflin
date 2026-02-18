@@ -15,21 +15,20 @@ This document defines datastore ownership for each service and the shared infras
 |---|---|---|---|
 | `gateway` | In-memory session store | n/a | Web session state is server-side in-memory for demo runs. |
 | `profile-service` | PostgreSQL | `profile` | User preferences, avatars, app settings. |
-| `sales-service` | PostgreSQL | `sales` | Leads, clients, and `outbox_events` / `inbox_events` tables. |
-| `order-service` | PostgreSQL | `orders` | Orders, timeline projection, and `outbox_events` / `inbox_events`. |
-| `inventory-service` | PostgreSQL | `inventory` | Stock, reservations, shipments, scan log, and `outbox_events` / `inbox_events`. |
-| `finance-service` | PostgreSQL | `finance` | Expenses, decisions, and `outbox_events` / `inbox_events`. |
-| `wuphf-service` | PostgreSQL | `notifications` | Notification inbox/read state and processed event IDs. |
+| `sales-service` | PostgreSQL | `sales` | Leads and clients. |
+| `order-service` | PostgreSQL | `orders` | Orders and timeline projection. |
+| `inventory-service` | PostgreSQL | `inventory` | Stock, reservations, shipments, and scan log. |
+| `finance-service` | PostgreSQL | `finance` | Expenses and approval decisions. |
+| `wuphf-service` | PostgreSQL | `notifications` | Notification inbox/read state. |
 | `keycloak` | PostgreSQL | `keycloak` | Keycloak realm/config/auth persistence. |
 | `openldap` | LDAP data store | `dc=dundermifflin,dc=com` | Source of identities/groups. |
-| `rabbitmq` | Queue storage | exchanges/queues | Event transport and retry/DLQ handling. |
+| `rabbitmq` | Queue storage | exchanges/queues | Event transport (always-on demo assumption). |
 
 ## RabbitMQ Ownership
 
 | Exchange | Producer Services | Primary Consumers |
 |---|---|---|
 | `dm.domain.events` | all domain services | service-specific queues |
-| `dm.domain.events.dlx` | broker dead-letter flow | ops + requeue tooling |
 
 Queue and routing-key contracts are defined in `docs/contracts/event_catalog_v1.md`.
 
@@ -40,14 +39,13 @@ Queue and routing-key contracts are defined in `docs/contracts/event_catalog_v1.
 - Services maintain local read models required for UI/API responses.
 - Gateway never reads or writes business tables directly.
 
-## Non-Replay Broker Compensation
+## Demo Broker Assumption
 
-Because RabbitMQ is used as a delivery bus (not an event history store):
+For this demo, RabbitMQ is assumed to be running and reachable while services are operating.
 
-- Every publishing service persists outgoing events in `outbox_events` before publish.
-- Every consuming service records processed CloudEvent IDs (`inbox_events` or equivalent) for deduplication.
-- User-facing timelines and status views are persisted in service tables, not derived from broker history.
-- Failed messages go to DLQ and are replayed operationally, not by ad hoc event-log rebuild.
+- Outbox/inbox reliability patterns are intentionally omitted.
+- User-facing timelines and status views are persisted in service tables.
+- If broker delivery fails, operations can be retried manually during development.
 
 ## Backup and Retention (Demo Defaults)
 
