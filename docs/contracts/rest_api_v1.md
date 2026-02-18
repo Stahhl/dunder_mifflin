@@ -4,6 +4,19 @@ Base path: `/api/v1`
 
 All timestamps are ISO-8601 UTC (`2026-02-18T20:00:00Z`).
 
+## 0. Gateway Routing Map
+
+Clients call only gateway routes under `/api/v1/*`. Gateway forwards requests to the owning service.
+
+| Gateway Path Prefix | Target Service |
+|---|---|
+| `/api/v1/auth/*` | `gateway` (auth/session endpoints) |
+| `/api/v1/leads*` | `sales-service` |
+| `/api/v1/orders*` | `order-service` |
+| `/api/v1/warehouse/*` | `inventory-service` |
+| `/api/v1/expenses*` | `finance-service` |
+| `/api/v1/notifications*` | `wuphf-service` |
+
 ## 1. Common Conventions
 
 ### Headers
