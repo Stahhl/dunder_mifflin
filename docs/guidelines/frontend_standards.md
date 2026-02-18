@@ -12,7 +12,7 @@ These standards apply to:
 ## 2. Languages and Tooling
 
 - TypeScript strict mode in every app.
-- Package manager: `pnpm` (preferred) or `npm`.
+- Package manager: `pnpm`.
 - Linting: ESLint.
 - Formatting: Prettier.
 - Unit tests: Vitest/Jest for React apps, Jest for Angular, Jest for widget.
@@ -28,6 +28,8 @@ These standards apply to:
 - Expo Router or React Navigation.
 - Auth with OIDC PKCE (Keycloak `warehouse-mobile` client).
 - Offline queue for shipment mutations with idempotency keys.
+- Store tokens only in platform secure storage (iOS Keychain / Android Keystore).
+- Do not implement gateway-managed mobile login/session cookies.
 
 ### Accounting (Angular)
 - Standalone components preferred.

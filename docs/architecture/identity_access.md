@@ -36,6 +36,11 @@ This document defines authentication and authorization for the demo system.
 2. App sends bearer token to gateway/mobile routes.
 3. Gateway validates token and forwards request.
 
+Decision for demo implementation:
+- Mobile uses direct Keycloak PKCE login.
+- Gateway is not used as a mobile auth broker/session issuer.
+- All mobile API traffic still goes through gateway for routing, authz enforcement, and observability.
+
 ## RBAC Mapping
 
 | LDAP Group | Keycloak Role | App Access |
