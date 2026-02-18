@@ -17,9 +17,9 @@
 
 ## 3. Event Standards
 
-- Format: CloudEvents 1.0 over Kafka.
+- Format: CloudEvents 1.0 over RabbitMQ (AMQP 0-9-1).
 - Event type naming: `com.dundermifflin.<domain>.<action>.v<version>`.
-- Partition key: aggregate ID (`leadId`, `orderId`, `expenseId`, etc.).
+- Routing keys are defined in `docs/contracts/event_catalog_v1.md`.
 - Event payloads are additive-only for non-breaking evolution.
 
 ## 4. Compatibility Rules
@@ -32,7 +32,7 @@
 ## 5. Idempotency Rules
 
 - Mutating HTTP endpoints that may be retried must support `Idempotency-Key`.
-- Warehouse offline replay must rely on idempotency keys.
+- Warehouse offline retry/sync must rely on idempotency keys.
 - Event consumers must deduplicate by event ID.
 
 ## 6. Contract Testing Expectations

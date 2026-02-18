@@ -23,8 +23,7 @@ Run the demo platform with a single command using Docker Compose.
 
 ### Infrastructure
 - `postgres`
-- `kafka`
-- `zookeeper`
+- `rabbitmq`
 - `keycloak`
 - `openldap`
 - `mailhog`
@@ -56,6 +55,8 @@ Run the demo platform with a single command using Docker Compose.
 Required variables (example values):
 - `POSTGRES_USER=dundermifflin`
 - `POSTGRES_PASSWORD=bears_beets_battlestar`
+- `RABBITMQ_DEFAULT_USER=dunder`
+- `RABBITMQ_DEFAULT_PASS=mifflin`
 - `KEYCLOAK_ADMIN=admin`
 - `KEYCLOAK_ADMIN_PASSWORD=admin`
 - `KEYCLOAK_REALM=scranton-branch`
@@ -63,7 +64,7 @@ Required variables (example values):
 ## 6. Data Store Topology
 
 - One PostgreSQL container with separate schemas per service (`sales`, `orders`, `inventory`, `finance`, `profile`, `notifications`, `keycloak`).
-- One Kafka cluster for all platform topics listed in `docs/contracts/event_catalog_v1.md`.
+- One RabbitMQ broker for all platform exchanges/queues listed in `docs/contracts/event_catalog_v1.md`.
 - LDAP remains the source of truth for identity groups and user records.
 - Service-to-service database access is disallowed outside owned schema.
 

@@ -5,8 +5,8 @@ This document defines datastore ownership for each service and the shared infras
 ## Storage Principles
 
 - Each service owns its write model and schema.
-- Cross-service integration uses REST and Kafka events, not direct table access.
-- Read models can be denormalized per service as needed.
+- Cross-service integration uses REST and RabbitMQ events, not direct table access.
+- Read models are persisted in service databases (not reconstructed from broker replay).
 - For demo simplicity, services share one PostgreSQL instance with separate schemas.
 
 ## Service Datastore Matrix
@@ -15,36 +15,44 @@ This document defines datastore ownership for each service and the shared infras
 |---|---|---|---|
 | `gateway` | In-memory session store | n/a | Web session state is server-side in-memory for demo runs. |
 | `profile-service` | PostgreSQL | `profile` | User preferences, avatars, app settings. |
-| `sales-service` | PostgreSQL | `sales` | Leads and clients. |
-| `order-service` | PostgreSQL | `orders` | Orders and order timeline read model. |
-| `inventory-service` | PostgreSQL | `inventory` | Stock, reservations, shipments. |
-| `finance-service` | PostgreSQL | `finance` | Expenses and approval decisions. |
-| `wuphf-service` | PostgreSQL | `notifications` | Notification inbox/read state projection. |
+| `sales-service` | PostgreSQL | `sales` | Leads, clients, and `outbox_events` / `inbox_events` tables. |
+| `order-service` | PostgreSQL | `orders` | Orders, timeline projection, and `outbox_events` / `inbox_events`. |
+| `inventory-service` | PostgreSQL | `inventory` | Stock, reservations, shipments, scan log, and `outbox_events` / `inbox_events`. |
+| `finance-service` | PostgreSQL | `finance` | Expenses, decisions, and `outbox_events` / `inbox_events`. |
+| `wuphf-service` | PostgreSQL | `notifications` | Notification inbox/read state and processed event IDs. |
 | `keycloak` | PostgreSQL | `keycloak` | Keycloak realm/config/auth persistence. |
 | `openldap` | LDAP data store | `dc=dundermifflin,dc=com` | Source of identities/groups. |
-| `kafka` | Kafka log storage | topic namespaces | Event transport and replay. |
+| `rabbitmq` | Queue storage | exchanges/queues | Event transport and retry/DLQ handling. |
 
-## Kafka Topic Ownership
+## RabbitMQ Ownership
 
-| Topic | Producer | Primary Persistence Side Effect |
+| Exchange | Producer Services | Primary Consumers |
 |---|---|---|
-| `dm.sales.leads` | `sales-service` | Lead conversion downstream actions |
-| `dm.orders.lifecycle` | `order-service` | Inventory reservation + timeline updates |
-| `dm.inventory.shipments` | `inventory-service` | Order status updates + notifications |
-| `dm.finance.expenses` | `finance-service` | Expense decision notifications |
-| `dm.notifications` | `wuphf-service` | Notification read model fan-out |
+| `dm.domain.events` | all domain services | service-specific queues |
+| `dm.domain.events.dlx` | broker dead-letter flow | ops + requeue tooling |
+
+Queue and routing-key contracts are defined in `docs/contracts/event_catalog_v1.md`.
 
 ## Data Access Rules
 
 - Only owning service may write its schema.
 - Direct cross-schema SQL between services is not allowed.
-- Services may keep local projections for performance/reliability.
+- Services maintain local read models required for UI/API responses.
 - Gateway never reads or writes business tables directly.
+
+## Non-Replay Broker Compensation
+
+Because RabbitMQ is used as a delivery bus (not an event history store):
+
+- Every publishing service persists outgoing events in `outbox_events` before publish.
+- Every consuming service records processed CloudEvent IDs (`inbox_events` or equivalent) for deduplication.
+- User-facing timelines and status views are persisted in service tables, not derived from broker history.
+- Failed messages go to DLQ and are replayed operationally, not by ad hoc event-log rebuild.
 
 ## Backup and Retention (Demo Defaults)
 
 - PostgreSQL: daily snapshot, 7-day retention.
-- Kafka: 7-day retention for lifecycle topics.
+- RabbitMQ queues: operational TTL/policy managed by environment (no long-term history guarantee).
 - Notifications: retain read/unread records for 90 days.
 
 ## Contract References
