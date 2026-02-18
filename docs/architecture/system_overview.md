@@ -61,4 +61,5 @@ This document defines the baseline architecture used by the roadmap.
 
 - REST contracts: `docs/contracts/rest_api_v1.md`
 - Event contracts: `docs/contracts/event_catalog_v1.md`
+- Datastore ownership: `docs/architecture/datastore_overview.md`
 - Governance rules: `docs/guidelines/api_and_events.md`

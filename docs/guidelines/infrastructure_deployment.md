@@ -60,14 +60,21 @@ Required variables (example values):
 - `KEYCLOAK_ADMIN_PASSWORD=admin`
 - `KEYCLOAK_REALM=scranton-branch`
 
-## 6. Startup and Health Rules
+## 6. Data Store Topology
+
+- One PostgreSQL container with separate schemas per service (`sales`, `orders`, `inventory`, `finance`, `profile`, `notifications`, `keycloak`).
+- One Kafka cluster for all platform topics listed in `docs/contracts/event_catalog_v1.md`.
+- LDAP remains the source of truth for identity groups and user records.
+- Service-to-service database access is disallowed outside owned schema.
+
+## 7. Startup and Health Rules
 
 - All services must define `healthcheck`.
 - `depends_on` must use `condition: service_healthy` where supported.
 - Gateway starts after IAM and required backend services are healthy.
 - Frontends start after gateway is healthy.
 
-## 7. Required Commands
+## 8. Required Commands
 
 ```bash
 # full demo stack
