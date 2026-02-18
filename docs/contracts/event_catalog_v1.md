@@ -20,9 +20,8 @@ Format: CloudEvents 1.0 JSON messages over RabbitMQ (AMQP 0-9-1).
 ## 2. Broker Topology
 
 - Exchange: `dm.domain.events` (type: `topic`, durable)
-- Dead-letter exchange: `dm.domain.events.dlx` (type: `topic`, durable)
 - Delivery mode: persistent
-- Delivery semantics: at-least-once with consumer acknowledgements
+- Delivery semantics: best-effort for demo runs (RabbitMQ assumed always available)
 
 ### Queue Bindings
 
@@ -170,5 +169,4 @@ Routing key: `notification.created.v1`
 
 - Additive changes only within `v1`.
 - Breaking change requires `v2` event type and routing key.
-- Consumers must be idempotent by CloudEvent `id`.
-- Failed deliveries route to DLQ; operators can manually requeue messages if needed.
+- Consumers should safely ignore duplicate or unknown fields when practical.

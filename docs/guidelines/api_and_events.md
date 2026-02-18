@@ -33,7 +33,7 @@
 
 - Mutating HTTP endpoints that may be retried must support `Idempotency-Key`.
 - Warehouse offline retry/sync must rely on idempotency keys.
-- Event consumers must deduplicate by event ID.
+- Event deduplication tables/outbox-inbox choreography are intentionally out of scope for this demo.
 
 ## 6. Contract Testing Expectations
 
