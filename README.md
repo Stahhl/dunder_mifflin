@@ -2,7 +2,7 @@
 
 > "Limitless paper in a paperless world."
 
-Welcome to the **Dunder Mifflin Scranton Branch** digital infrastructure. This repository contains the complete source code for our Enterprise Resource Planning (ERP) system, modernized for the streaming era.
+Welcome to the **Dunder Mifflin Scranton Branch** digital infrastructure. The platform is intentionally split into separate backend and frontend roots so different teams can build, test, and release independently.
 
 ## 📂 Documentation
 
@@ -18,7 +18,7 @@ Before diving in, please review the following architectural plans:
 
 ## 🚀 Quick Start (The "One Command")
 
-We use Docker Compose to spin up the entire "Office" environment.
+We use Docker Compose to spin up an integrated "Office" environment from independently built backend/frontend images.
 
 ### Prerequisites
 *   Docker & Docker Compose (V2)
@@ -28,10 +28,10 @@ We use Docker Compose to spin up the entire "Office" environment.
 ### Start the System
 ```bash
 # Start everything (Backend, Frontend, Infrastructure)
-docker compose --profile app up -d
+docker compose -f platform/docker-compose.yml --profile app up -d
 
 # Check the logs
-docker compose logs -f
+docker compose -f platform/docker-compose.yml logs -f
 ```
 
 ### Access Points
@@ -46,28 +46,41 @@ docker compose logs -f
 
 ```
 .
-├── apps/               # Frontend Applications
-│   ├── portal/         # Main Intranet
-│   └── warehouse/      # Warehouse Scanner App
-├── services/           # Backend Microservices
-│   ├── sales/          # CRM & Sales
-│   ├── inventory/      # Warehouse Management
-│   └── gateway/        # Spring Cloud Gateway
-├── libs/               # Shared Libraries
-│   └── contracts/      # CloudEvents & DTOs
-├── plans/              # Architectural Plans
-├── docs/               # Detailed Design Docs
-└── docker-compose.yml  # Orchestration
+├── backend/                    # Backend service roots (team-owned)
+│   ├── sales-service/
+│   │   ├── src/
+│   │   └── Dockerfile
+│   ├── inventory-service/
+│   │   ├── src/
+│   │   └── Dockerfile
+│   └── gateway/
+│       ├── src/
+│       └── Dockerfile
+├── frontend/                   # Frontend app roots (team-owned)
+│   ├── scranton-portal/
+│   │   ├── src/
+│   │   └── Dockerfile
+│   ├── infinity-web/
+│   │   ├── src/
+│   │   └── Dockerfile
+│   └── warehouse-mobile/
+│       ├── app/
+│       └── Dockerfile.ci
+├── contracts/                  # Versioned OpenAPI/AsyncAPI/JSON Schemas
+├── platform/                   # Integration/orchestration assets
+│   └── docker-compose.yml
+├── plans/                      # Architectural Plans
+└── docs/                       # Detailed Design Docs
 ```
 
 ## 🧪 Testing
 
 ```bash
-# Run Unit Tests (Backend)
-./gradlew test
+# Run Unit Tests (Backend example)
+cd backend/sales-service && ./gradlew test
 
-# Run E2E Tests
-npm run test:e2e
+# Run E2E Tests (integration workspace)
+cd platform && npm run test:e2e
 ```
 
 ---

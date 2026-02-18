@@ -1,14 +1,14 @@
 # Infrastructure & Deployment Design Document
 
 ## 1. Overview
-This document outlines the infrastructure strategy for running the entire Dunder Mifflin system locally and in production-like environments. The core principle is **"One Command to Rule Them All"**—a single Docker Compose configuration to spin up the complete stack.
+This document outlines the infrastructure strategy for running the entire Dunder Mifflin system locally and in production-like environments. Backend and frontend applications are owned by separate teams in separate roots/repositories, while platform orchestration composes them into an integrated environment.
 
 ## 2. Container Orchestration Strategy
 
 *   **Tool:** Docker Compose (V2).
 *   **File Structure:**
-    *   `docker-compose.yml`: The master file containing all service definitions.
-    *   `docker-compose.override.yml` (Optional): For local development overrides (e.g., mounting source code volumes, exposing debugging ports).
+    *   `platform/docker-compose.yml`: The master integration file containing all service definitions.
+    *   `platform/docker-compose.override.yml` (Optional): For local development overrides (e.g., mounting source code volumes, exposing debugging ports).
 
 ### Key Design Decisions
 
@@ -18,10 +18,11 @@ This document outlines the infrastructure strategy for running the entire Dunder
     *   **Level 1:** Backend Services (Waiting for Level 0 to be healthy).
     *   **Level 2:** Frontend / Gateway (Waiting for Level 1).
 3.  **Health Checks:** Every service MUST define a `healthcheck`. Dependent services will use `condition: service_healthy` to ensure a clean startup sequence, preventing "Connection Refused" loops.
+4.  **Team Boundaries:** Each deployable service/app builds from its own root and its own `Dockerfile`; compose orchestrates built images rather than shared source folders.
 
 ## 3. Service Inventory
 
-The `docker-compose.yml` will orchestrate the following:
+The `platform/docker-compose.yml` file will orchestrate the following:
 
 ### A. Infrastructure (The "Annex")
 *   **`postgres`:** Central database (Schemas: `sales`, `inventory`, `keycloak`).
@@ -42,9 +43,12 @@ The `docker-compose.yml` will orchestrate the following:
 *   **`sales-service`:** (Internal Port).
 *   **`inventory-service`:** (Internal Port).
 *   **`profile-service`:** (Internal Port).
+*   **Build ownership:** Each backend service image is built from `backend/<service-name>/Dockerfile`.
 
 ### D. Frontend (The "Reception")
-*   **`frontend`:** NGINX serving the Angular apps (Port `80`).
+*   **`frontend`:** NGINX serving web frontends (Angular/React/static Next.js output) on Port `80`.
+*   **`warehouse-mobile`:** React Native + Expo app delivered through mobile build/release pipelines (not hosted in NGINX).
+*   **Build ownership:** Each web frontend image is built from `frontend/<app-name>/Dockerfile`.
 
 ## 4. Volume Management
 
@@ -69,8 +73,8 @@ Persistent data will be stored in named Docker volumes to survive container rest
 
 ```bash
 # Start the entire system
-docker compose --profile app up -d
+docker compose -f platform/docker-compose.yml --profile app up -d
 
 # Start only infrastructure for backend development
-docker compose --profile infra up -d
+docker compose -f platform/docker-compose.yml --profile infra up -d
 ```

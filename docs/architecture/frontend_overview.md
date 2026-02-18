@@ -26,7 +26,7 @@ This document details the frontend applications for Dunder Mifflin Scranton. The
 
 ### 3. The Warehouse App (Mobile/Tablet)
 *   **Audience:** Warehouse Crew (Darryl, Roy, Madge)
-*   **Tech Stack:** React Native or PWA (Progressive Web App).
+*   **Tech Stack:** React Native with Expo.
 *   **Purpose:** Inventory management on the floor.
 *   **Features:**
     *   **Scanner:** Barcode scanning for paper reams.
@@ -66,5 +66,5 @@ This document details the frontend applications for Dunder Mifflin Scranton. The
 
 1.  **Phase 1:** "The Scranton Portal" (Core shell & navigation).
 2.  **Phase 2:** "Dunder Mifflin Infinity" (Sales functionality).
-3.  **Phase 3:** Warehouse PWA.
+3.  **Phase 3:** Warehouse mobile app (React Native + Expo).
 4.  **Phase 4:** Accounting Suite & WUPHF integration.

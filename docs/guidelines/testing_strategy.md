@@ -7,7 +7,7 @@ This document outlines the strategy for verifying the entire Dunder Mifflin syst
 
 *   **Framework:** **Playwright** (Node.js/TypeScript).
     *   *Why?* Handles multi-tab/multi-user scenarios better than Cypress, supports API testing, and allows visual regression testing.
-*   **Runner:** Docker Compose (Profile: `e2e`).
+*   **Runner:** Docker Compose (integration file: `platform/docker-compose.yml`, profile: `e2e`).
 *   **Data Seeding:** Direct DB access (Postgres) or specialized "Test Seed" API endpoints available only in the `e2e` profile.
 
 ## 3. Test Environment
@@ -72,7 +72,7 @@ tests/e2e/
 
 *   **Trigger:** On Pull Request merge to `main` or nightly.
 *   **Action:**
-    1.  `docker compose up -d --profile e2e`
+    1.  `docker compose -f platform/docker-compose.yml up -d --profile e2e`
     2.  Wait for health checks.
     3.  `npm run test:e2e`
     4.  Upload video recordings/traces of failed tests as artifacts.

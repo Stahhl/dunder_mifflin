@@ -110,3 +110,10 @@ The build must be self-contained. A developer should be able to run `./gradlew t
     *   **Ktlint:** For code style enforcement.
     *   **Detekt:** For static code analysis.
     *   **Jacoco:** For code coverage (Target: >80%).
+
+## 11. Repository & Container Boundaries
+
+*   Each backend microservice lives in its own root directory (`backend/<service-name>/`) to preserve team autonomy.
+*   Every service must define and maintain its own `Dockerfile` in that service root.
+*   Cross-service source imports are prohibited; integrate through APIs/events and published contract artifacts only.
+*   Each service owns its build pipeline, versioning, and release cadence.

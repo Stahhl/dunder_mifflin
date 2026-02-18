@@ -15,16 +15,19 @@ This document defines how Dunder Mifflin services communicate, share schemas, an
 
 We use **CloudEvents** (structured mode) over JSON to ensure metadata (source, type, time) is consistent.
 
-### A. The "Shared Contracts" Library
-To avoid "Schema Registry" complexity (which adds runtime dependencies), we will use a **Shared Kotlin Library** (`libs/dunder-contracts`) published to our local Maven repository.
+### A. The "Versioned Contracts" Repository
+To preserve team boundaries, contracts must be shared as **versioned schemas/artifacts**, not as cross-service source code.
 
-*   **Content:**
-    *   CloudEvent Types (Enums).
-    *   Data Payloads (Kotlin Data Classes).
-    *   JSON SerDes (Jackson Modules).
+*   **Source of truth:**
+    *   OpenAPI specs for REST contracts.
+    *   AsyncAPI and JSON Schema for event contracts.
+*   **Distribution:**
+    *   Publish versioned artifacts from a dedicated contracts root/repo (for example `contracts/dunder-events`).
+    *   Backend services and frontend apps consume published versions through code generation in their own build pipelines.
 *   **Usage:**
-    *   `sales-service` imports `dunder-contracts:1.0.0` to publish `OrderCreated`.
-    *   `inventory-service` imports `dunder-contracts:1.0.0` to consume it.
+    *   `sales-service` generates publisher DTOs/serializers from contract artifact version `1.0.0`.
+    *   `inventory-service` generates consumer models from the same version.
+    *   Frontend apps generate TypeScript clients/types from published OpenAPI versions.
 
 ### B. Event Versioning Strategy
 
@@ -67,23 +70,22 @@ If a schema change is radically incompatible (structural break), we fork the top
 2.  **Never rename a field.** Add a new field and deprecate the old one.
 3.  **Always provide default values** for new fields (Consumer tolerance).
 
-## 4. Shared Library Structure
+## 4. Contracts Repository Structure
 
 ```
-dunder-contracts/
-├── src/main/kotlin/
-│   ├── events/
-│   │   ├── sales/
-│   │   │   ├── OrderCreatedV1.kt
-│   │   │   └── OrderCreatedV2.kt
-│   │   └── inventory/
-│   └── common/
-│       └── CloudEventWrapper.kt
-└── build.gradle.kts
+contracts/dunder-events/
+├── openapi/
+│   └── sales-api.v1.yaml
+├── asyncapi/
+│   └── order-events.v1.yaml
+├── jsonschema/
+│   ├── sales.order-created.v1.json
+│   └── sales.order-created.v2.json
+└── CHANGELOG.md
 ```
 
 ## 5. Testing Contracts
 
 We use **Consumer-Driven Contracts (Spring Cloud Contract)** or standard integration tests.
-*   **Producer Test:** Ensures the app generates JSON matching the `dunder-contracts` schema.
-*   **Consumer Test:** Ensures the app can deserialize sample JSONs from the library.
+*   **Producer Test:** Ensures the app generates JSON matching the published contract schema version.
+*   **Consumer Test:** Ensures the app can deserialize sample payloads from the contract artifact fixtures.
