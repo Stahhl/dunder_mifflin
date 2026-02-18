@@ -89,6 +89,7 @@ The build must be self-contained. A developer should be able to run `./gradlew t
 
 *   **Authentication:** OAuth2 / OIDC via Keycloak.
 *   **Authorization:** Method-level security using mapped roles (e.g., `@PreAuthorize("hasRole('SALES_ASSOCIATE')")`).
+*   **Role source:** Gateway/services derive authorities from token `realm_access.roles` (not from group claims).
 *   **Secrets:** Never commit secrets. Use Environment Variables or Spring Cloud Config.
 
 ## 9. API Specifications

@@ -54,6 +54,11 @@ Decision for demo implementation:
 ### Navigation Rule
 - App links are visible only when user has matching role or `manager`.
 
+### Authorization Claim Source (Option A)
+- Gateway authorization decisions use Keycloak `realm_access.roles` as the source of truth.
+- LDAP groups are still synced and may be exposed for informational UI/debug usage.
+- If expected roles are missing from `realm_access.roles`, access is denied (no group-based fallback inference).
+
 ## Demo Credentials
 
 - Default password for seeded demo users: `password`

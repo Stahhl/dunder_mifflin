@@ -47,6 +47,10 @@ Clients call only gateway routes under `/api/v1/*`. Gateway forwards requests to
 ### `GET /auth/me`
 Returns current authenticated user and app visibility rules.
 
+Authorization behavior:
+- `roles` are derived from Keycloak `realm_access.roles` and are the only authorization source.
+- `groups` are informational and must not be used by clients for access-control decisions.
+
 ```json
 {
   "userId": "jhalpert",
