@@ -48,4 +48,12 @@ This repository contains the implementation plan and delivery docs for a demo ER
 
 ## Current State
 
-This repository currently focuses on planning/specification docs. Code scaffolding will follow the PR roadmap.
+- PR1 scaffold is in progress with a working Portal app at `apps/portal`.
+- Planning/specification docs remain the source of truth for roadmap and contracts.
+
+## Quickstart (Portal PR1)
+
+```bash
+pnpm install
+pnpm dev:portal
+```

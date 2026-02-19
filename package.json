@@ -1,0 +1,10 @@
+{
+  "name": "dunder-mifflin",
+  "private": true,
+  "packageManager": "pnpm@10.4.0",
+  "scripts": {
+    "dev:portal": "pnpm --filter @dunder/portal dev",
+    "build:portal": "pnpm --filter @dunder/portal build",
+    "test:portal": "pnpm --filter @dunder/portal test"
+  }
+}
