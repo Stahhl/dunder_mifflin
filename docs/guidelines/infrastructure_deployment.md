@@ -6,9 +6,9 @@ Run the demo platform with a single command using Docker Compose.
 
 ## 2. Compose Layout
 
-- `platform/docker-compose.yml`: primary stack definition.
-- `platform/docker-compose.override.yml`: local development overrides.
-- `platform/.env.example`: documented environment variables.
+- `docker-compose.yml`: primary stack definition.
+- `docker-compose.override.yml`: local development overrides.
+- `.env.example`: documented environment variables.
 - `platform/keycloak/realm-export.json`: seeded realm config.
 - `platform/ldap/users.ldif`: seeded users/groups.
 
@@ -41,6 +41,7 @@ Run the demo platform with a single command using Docker Compose.
 - `portal-web`
 - `infinity-web`
 - `accounting-web`
+- `wuphf-widget`
 - `warehouse-mobile` (Expo/dev profile or device build)
 
 ### Observability
@@ -79,8 +80,8 @@ Required variables (example values):
 
 ```bash
 # full demo stack
-docker compose -f platform/docker-compose.yml --profile app up -d
+docker compose --profile app up -d
 
 # infra only
-docker compose -f platform/docker-compose.yml --profile infra up -d
+docker compose --profile infra up -d
 ```

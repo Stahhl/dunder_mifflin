@@ -1,0 +1,384 @@
+name: dunder-mifflin
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    profiles: ["infra", "app", "e2e"]
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-dundermifflin}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-bears_beets_battlestar}
+      POSTGRES_DB: ${POSTGRES_DB:-dundermifflin}
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      - ./platform/postgres/init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "pg_isready -U ${POSTGRES_USER:-dundermifflin} -d ${POSTGRES_DB:-dundermifflin}"
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 10s
+    networks: [dmf]
+
+  rabbitmq:
+    image: rabbitmq:3.13-management-alpine
+    restart: unless-stopped
+    profiles: ["infra", "app", "e2e"]
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_DEFAULT_USER:-dunder}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_DEFAULT_PASS:-mifflin}
+    ports:
+      - "${RABBITMQ_AMQP_PORT:-5672}:5672"
+      - "${RABBITMQ_MANAGEMENT_PORT:-15672}:15672"
+    volumes:
+      - rabbitmq-data:/var/lib/rabbitmq
+      - ./platform/rabbitmq/rabbitmq.conf:/etc/rabbitmq/rabbitmq.conf:ro
+      - ./platform/rabbitmq/definitions.json:/etc/rabbitmq/definitions.json:ro
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
+    networks: [dmf]
+
+  openldap:
+    image: osixia/openldap:1.5.0
+    restart: unless-stopped
+    profiles: ["infra", "app", "e2e"]
+    command: ["--copy-service"]
+    environment:
+      LDAP_ORGANISATION: Dunder Mifflin
+      LDAP_DOMAIN: dundermifflin.com
+      LDAP_BASE_DN: dc=dundermifflin,dc=com
+      LDAP_ADMIN_PASSWORD: ${LDAP_ADMIN_PASSWORD:-admin}
+      LDAP_CONFIG_PASSWORD: ${LDAP_CONFIG_PASSWORD:-admin}
+      LDAP_TLS: "false"
+    ports:
+      - "${LDAP_PORT:-389}:389"
+    volumes:
+      - ldap-data:/var/lib/ldap
+      - ldap-config:/etc/ldap/slapd.d
+      - ./platform/ldap/users.ldif:/container/service/slapd/assets/config/bootstrap/ldif/custom/50-users.ldif:ro
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "ldapsearch -x -H ldap://127.0.0.1:389 -D \"cn=admin,dc=dundermifflin,dc=com\" -w ${LDAP_ADMIN_PASSWORD:-admin} -b \"dc=dundermifflin,dc=com\" \"(uid=jhalpert)\" dn | grep -q \"dn: uid=jhalpert,ou=people,dc=dundermifflin,dc=com\""
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 20s
+    networks: [dmf]
+
+  ldap-seed:
+    image: osixia/openldap:1.5.0
+    restart: "no"
+    profiles: ["infra", "app", "e2e"]
+    depends_on:
+      openldap:
+        condition: service_healthy
+    entrypoint: ["/bin/sh", "-ec"]
+    volumes:
+      - ./platform/ldap/users.ldif:/seed/users.ldif:ro
+    command:
+      - >
+        until ldapsearch -x -H ldap://openldap:389 -D "cn=admin,dc=dundermifflin,dc=com" -w ${LDAP_ADMIN_PASSWORD:-admin} -b "dc=dundermifflin,dc=com" "(objectClass=*)" dn >/dev/null 2>&1; do sleep 2; done;
+        ldapsearch -x -H ldap://openldap:389 -D "cn=admin,dc=dundermifflin,dc=com" -w ${LDAP_ADMIN_PASSWORD:-admin} -b "dc=dundermifflin,dc=com" "(uid=jhalpert)" dn | grep -q "dn: uid=jhalpert,ou=people,dc=dundermifflin,dc=com" || ldapadd -x -H ldap://openldap:389 -D "cn=admin,dc=dundermifflin,dc=com" -w ${LDAP_ADMIN_PASSWORD:-admin} -f /seed/users.ldif
+    networks: [dmf]
+
+  keycloak:
+    image: quay.io/keycloak/keycloak:26.0
+    restart: unless-stopped
+    profiles: ["infra", "app", "e2e"]
+    command: ["start-dev", "--import-realm", "--http-port=8080"]
+    environment:
+      KC_DB: postgres
+      KC_DB_URL_HOST: postgres
+      KC_DB_URL_PORT: 5432
+      KC_DB_URL_DATABASE: ${POSTGRES_DB:-dundermifflin}
+      KC_DB_SCHEMA: keycloak
+      KC_DB_USERNAME: ${POSTGRES_USER:-dundermifflin}
+      KC_DB_PASSWORD: ${POSTGRES_PASSWORD:-bears_beets_battlestar}
+      KC_HEALTH_ENABLED: "true"
+      KC_METRICS_ENABLED: "true"
+      KC_HTTP_ENABLED: "true"
+      KC_HOSTNAME_STRICT: "false"
+      KC_BOOTSTRAP_ADMIN_USERNAME: ${KEYCLOAK_ADMIN:-admin}
+      KC_BOOTSTRAP_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD:-admin}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      openldap:
+        condition: service_healthy
+      ldap-seed:
+        condition: service_completed_successfully
+    ports:
+      - "${KEYCLOAK_PORT:-8080}:8080"
+    volumes:
+      - keycloak-data:/opt/keycloak/data
+      - ./platform/keycloak/realm-export.json:/opt/keycloak/data/import/realm-export.json:ro
+    healthcheck:
+      test: ["CMD-SHELL", "bash -c 'cat < /dev/null > /dev/tcp/127.0.0.1/8080'"]
+      interval: 10s
+      timeout: 5s
+      retries: 20
+      start_period: 35s
+    networks: [dmf]
+
+  keycloak-seed:
+    image: quay.io/keycloak/keycloak:26.0
+    restart: "no"
+    profiles: ["infra", "app", "e2e"]
+    depends_on:
+      keycloak:
+        condition: service_healthy
+      ldap-seed:
+        condition: service_completed_successfully
+    entrypoint: ["/bin/sh", "/seed/seed_keycloak_ldap.sh"]
+    volumes:
+      - ./platform/keycloak/seed_keycloak_ldap.sh:/seed/seed_keycloak_ldap.sh:ro
+    networks: [dmf]
+
+  mailhog:
+    image: mailhog/mailhog:v1.0.1
+    restart: unless-stopped
+    profiles: ["infra", "app", "e2e"]
+    ports:
+      - "${MAILHOG_SMTP_PORT:-1025}:1025"
+      - "${MAILHOG_UI_PORT:-8025}:8025"
+    healthcheck:
+      test: ["CMD", "MailHog", "-version"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 5s
+    networks: [dmf]
+
+  gateway:
+    profiles: ["app", "e2e"]
+    build:
+      context: ./services/gateway
+      dockerfile: Dockerfile
+    image: dunder/gateway:dev
+    depends_on:
+      postgres:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+      keycloak:
+        condition: service_healthy
+      keycloak-seed:
+        condition: service_completed_successfully
+    environment:
+      SERVICE_NAME: gateway
+      SERVER_PORT: 8081
+    ports:
+      - "${GATEWAY_PORT:-8081}:8081"
+    networks: [dmf]
+
+  profile-service:
+    profiles: ["app", "e2e"]
+    build:
+      context: ./services/profile-service
+      dockerfile: Dockerfile
+    image: dunder/profile-service:dev
+    depends_on:
+      postgres:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    environment:
+      SERVICE_NAME: profile-service
+      SERVER_PORT: 8091
+    ports:
+      - "${PROFILE_SERVICE_PORT:-8091}:8091"
+    networks: [dmf]
+
+  sales-service:
+    profiles: ["app", "e2e"]
+    build:
+      context: ./services/sales-service
+      dockerfile: Dockerfile
+    image: dunder/sales-service:dev
+    depends_on:
+      postgres:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    environment:
+      SERVICE_NAME: sales-service
+      SERVER_PORT: 8092
+    ports:
+      - "${SALES_SERVICE_PORT:-8092}:8092"
+    networks: [dmf]
+
+  order-service:
+    profiles: ["app", "e2e"]
+    build:
+      context: ./services/order-service
+      dockerfile: Dockerfile
+    image: dunder/order-service:dev
+    depends_on:
+      postgres:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    environment:
+      SERVICE_NAME: order-service
+      SERVER_PORT: 8093
+    ports:
+      - "${ORDER_SERVICE_PORT:-8093}:8093"
+    networks: [dmf]
+
+  inventory-service:
+    profiles: ["app", "e2e"]
+    build:
+      context: ./services/inventory-service
+      dockerfile: Dockerfile
+    image: dunder/inventory-service:dev
+    depends_on:
+      postgres:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    environment:
+      SERVICE_NAME: inventory-service
+      SERVER_PORT: 8094
+    ports:
+      - "${INVENTORY_SERVICE_PORT:-8094}:8094"
+    networks: [dmf]
+
+  finance-service:
+    profiles: ["app", "e2e"]
+    build:
+      context: ./services/finance-service
+      dockerfile: Dockerfile
+    image: dunder/finance-service:dev
+    depends_on:
+      postgres:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    environment:
+      SERVICE_NAME: finance-service
+      SERVER_PORT: 8095
+    ports:
+      - "${FINANCE_SERVICE_PORT:-8095}:8095"
+    networks: [dmf]
+
+  wuphf-service:
+    profiles: ["app", "e2e"]
+    build:
+      context: ./services/wuphf-service
+      dockerfile: Dockerfile
+    image: dunder/wuphf-service:dev
+    depends_on:
+      postgres:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    environment:
+      SERVICE_NAME: wuphf-service
+      SERVER_PORT: 8096
+    ports:
+      - "${WUPHF_SERVICE_PORT:-8096}:8096"
+    networks: [dmf]
+
+  portal-web:
+    profiles: ["app", "e2e"]
+    build:
+      context: ./apps/portal
+      dockerfile: Dockerfile
+    image: dunder/portal-web:dev
+    depends_on:
+      gateway:
+        condition: service_started
+    environment:
+      APP_NAME: portal-web
+      APP_PORT: 3000
+    ports:
+      - "${PORTAL_WEB_PORT:-3000}:3000"
+    networks: [dmf]
+
+  infinity-web:
+    profiles: ["app", "e2e"]
+    build:
+      context: ./apps/infinity
+      dockerfile: Dockerfile
+    image: dunder/infinity-web:dev
+    depends_on:
+      gateway:
+        condition: service_started
+    environment:
+      APP_NAME: infinity-web
+      APP_PORT: 3001
+    ports:
+      - "${INFINITY_WEB_PORT:-3001}:3001"
+    networks: [dmf]
+
+  accounting-web:
+    profiles: ["app", "e2e"]
+    build:
+      context: ./apps/accounting
+      dockerfile: Dockerfile
+    image: dunder/accounting-web:dev
+    depends_on:
+      gateway:
+        condition: service_started
+    environment:
+      APP_NAME: accounting-web
+      APP_PORT: 3002
+    ports:
+      - "${ACCOUNTING_WEB_PORT:-3002}:3002"
+    networks: [dmf]
+
+  wuphf-widget:
+    profiles: ["app", "e2e"]
+    build:
+      context: ./apps/wuphf-widget
+      dockerfile: Dockerfile
+    image: dunder/wuphf-widget:dev
+    depends_on:
+      gateway:
+        condition: service_started
+    environment:
+      APP_NAME: wuphf-widget
+      APP_PORT: 3003
+    ports:
+      - "${WUPHF_WIDGET_PORT:-3003}:3003"
+    networks: [dmf]
+
+  warehouse-mobile:
+    profiles: ["app", "e2e"]
+    build:
+      context: ./apps/warehouse-mobile
+      dockerfile: Dockerfile
+    image: dunder/warehouse-mobile:dev
+    depends_on:
+      gateway:
+        condition: service_started
+    environment:
+      APP_NAME: warehouse-mobile
+      APP_PORT: 3004
+    ports:
+      - "${WAREHOUSE_MOBILE_PORT:-3004}:3004"
+    networks: [dmf]
+
+volumes:
+  postgres-data:
+  rabbitmq-data:
+  keycloak-data:
+  ldap-data:
+  ldap-config:
+
+networks:
+  dmf:
+    driver: bridge

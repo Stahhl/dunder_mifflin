@@ -1,0 +1,122 @@
+{
+  "vhosts": [
+    {
+      "name": "/"
+    }
+  ],
+  "users": [
+    {
+      "name": "dunder",
+      "password": "mifflin",
+      "tags": "administrator"
+    }
+  ],
+  "permissions": [
+    {
+      "user": "dunder",
+      "vhost": "/",
+      "configure": ".*",
+      "write": ".*",
+      "read": ".*"
+    }
+  ],
+  "exchanges": [
+    {
+      "name": "dm.domain.events",
+      "vhost": "/",
+      "type": "topic",
+      "durable": true,
+      "auto_delete": false,
+      "internal": false,
+      "arguments": {}
+    }
+  ],
+  "queues": [
+    {
+      "name": "inventory.order-events.q",
+      "vhost": "/",
+      "durable": true,
+      "auto_delete": false,
+      "arguments": {}
+    },
+    {
+      "name": "order.inventory-events.q",
+      "vhost": "/",
+      "durable": true,
+      "auto_delete": false,
+      "arguments": {}
+    },
+    {
+      "name": "wuphf.domain-events.q",
+      "vhost": "/",
+      "durable": true,
+      "auto_delete": false,
+      "arguments": {}
+    },
+    {
+      "name": "notification.readmodel.q",
+      "vhost": "/",
+      "durable": true,
+      "auto_delete": false,
+      "arguments": {}
+    }
+  ],
+  "bindings": [
+    {
+      "source": "dm.domain.events",
+      "vhost": "/",
+      "destination": "inventory.order-events.q",
+      "destination_type": "queue",
+      "routing_key": "order.created.v1",
+      "arguments": {}
+    },
+    {
+      "source": "dm.domain.events",
+      "vhost": "/",
+      "destination": "order.inventory-events.q",
+      "destination_type": "queue",
+      "routing_key": "inventory.stock.*.v1",
+      "arguments": {}
+    },
+    {
+      "source": "dm.domain.events",
+      "vhost": "/",
+      "destination": "order.inventory-events.q",
+      "destination_type": "queue",
+      "routing_key": "shipment.dispatched.v1",
+      "arguments": {}
+    },
+    {
+      "source": "dm.domain.events",
+      "vhost": "/",
+      "destination": "wuphf.domain-events.q",
+      "destination_type": "queue",
+      "routing_key": "order.*.v1",
+      "arguments": {}
+    },
+    {
+      "source": "dm.domain.events",
+      "vhost": "/",
+      "destination": "wuphf.domain-events.q",
+      "destination_type": "queue",
+      "routing_key": "shipment.*.v1",
+      "arguments": {}
+    },
+    {
+      "source": "dm.domain.events",
+      "vhost": "/",
+      "destination": "wuphf.domain-events.q",
+      "destination_type": "queue",
+      "routing_key": "finance.expense.*.v1",
+      "arguments": {}
+    },
+    {
+      "source": "dm.domain.events",
+      "vhost": "/",
+      "destination": "notification.readmodel.q",
+      "destination_type": "queue",
+      "routing_key": "notification.created.v1",
+      "arguments": {}
+    }
+  ]
+}

@@ -137,7 +137,7 @@ This roadmap breaks work into sequential PRs. Each PR is sized to be reviewable 
 - Add CI gate that blocks merge on failing golden paths.
 
 **Acceptance**
-- E2E suite runs in CI against `platform/docker-compose.yml`.
+- E2E suite runs in CI against `docker-compose.yml`.
 - Golden-path failures block merge.
 - Flaky tests are tracked and kept below agreed threshold.
 

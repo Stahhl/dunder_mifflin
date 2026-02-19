@@ -1,0 +1,198 @@
+{
+  "realm": "scranton-branch",
+  "enabled": true,
+  "displayName": "Dunder Mifflin Scranton",
+  "registrationAllowed": false,
+  "loginWithEmailAllowed": true,
+  "rememberMe": true,
+  "resetPasswordAllowed": false,
+  "roles": {
+    "realm": [
+      {
+        "name": "sales-associate",
+        "description": "Sales application access"
+      },
+      {
+        "name": "warehouse-operator",
+        "description": "Warehouse application access"
+      },
+      {
+        "name": "accountant",
+        "description": "Accounting application access"
+      },
+      {
+        "name": "manager",
+        "description": "Cross-app management access"
+      },
+      {
+        "name": "portal-user",
+        "description": "Portal-only access"
+      }
+    ]
+  },
+  "groups": [
+    {
+      "name": "sales",
+      "realmRoles": ["sales-associate"]
+    },
+    {
+      "name": "warehouse",
+      "realmRoles": ["warehouse-operator"]
+    },
+    {
+      "name": "accounting",
+      "realmRoles": ["accountant"]
+    },
+    {
+      "name": "management",
+      "realmRoles": ["manager"]
+    },
+    {
+      "name": "admin_staff",
+      "realmRoles": ["portal-user"]
+    }
+  ],
+  "clients": [
+    {
+      "clientId": "dunder-mifflin-gateway",
+      "name": "Dunder Mifflin Gateway",
+      "enabled": true,
+      "protocol": "openid-connect",
+      "publicClient": false,
+      "secret": "gateway-secret-change-me",
+      "standardFlowEnabled": true,
+      "directAccessGrantsEnabled": false,
+      "serviceAccountsEnabled": false,
+      "redirectUris": [
+        "http://localhost:8081/*",
+        "http://localhost:5173/*"
+      ],
+      "webOrigins": [
+        "http://localhost:8081",
+        "http://localhost:5173"
+      ]
+    },
+    {
+      "clientId": "warehouse-mobile",
+      "name": "Warehouse Mobile",
+      "enabled": true,
+      "protocol": "openid-connect",
+      "publicClient": true,
+      "standardFlowEnabled": true,
+      "directAccessGrantsEnabled": false,
+      "serviceAccountsEnabled": false,
+      "redirectUris": [
+        "exp://*",
+        "dundermifflin://*"
+      ],
+      "attributes": {
+        "pkce.code.challenge.method": "S256"
+      }
+    }
+  ],
+  "components": {
+    "org.keycloak.storage.UserStorageProvider": [
+      {
+        "id": "8f1d0c44-6af6-4d0e-95c8-6b3f700a0001",
+        "name": "dunder-ldap",
+        "providerId": "ldap",
+        "config": {
+          "enabled": ["true"],
+          "priority": ["0"],
+          "fullSyncPeriod": ["-1"],
+          "changedSyncPeriod": ["-1"],
+          "cachePolicy": ["DEFAULT"],
+          "importEnabled": ["true"],
+          "syncRegistrations": ["false"],
+          "vendor": ["other"],
+          "usernameLDAPAttribute": ["uid"],
+          "rdnLDAPAttribute": ["uid"],
+          "uuidLDAPAttribute": ["entryUUID"],
+          "userObjectClasses": ["inetOrgPerson, organizationalPerson, person, top"],
+          "connectionUrl": ["ldap://openldap:389"],
+          "usersDn": ["ou=people,dc=dundermifflin,dc=com"],
+          "authType": ["simple"],
+          "bindDn": ["cn=admin,dc=dundermifflin,dc=com"],
+          "bindCredential": ["admin"],
+          "searchScope": ["2"],
+          "editMode": ["READ_ONLY"],
+          "validatePasswordPolicy": ["false"],
+          "trustEmail": ["true"],
+          "pagination": ["true"],
+          "batchSizeForSync": ["1000"],
+          "allowKerberosAuthentication": ["false"],
+          "debug": ["false"],
+          "useTruststoreSpi": ["ldapsOnly"],
+          "connectionPooling": ["true"]
+        },
+        "subComponents": {
+          "org.keycloak.storage.ldap.mappers.LDAPStorageMapper": [
+            {
+              "name": "username",
+              "providerId": "user-attribute-ldap-mapper",
+              "config": {
+                "ldap.attribute": ["uid"],
+                "user.model.attribute": ["username"],
+                "read.only": ["true"],
+                "always.read.value.from.ldap": ["true"],
+                "is.mandatory.in.ldap": ["true"]
+              }
+            },
+            {
+              "name": "email",
+              "providerId": "user-attribute-ldap-mapper",
+              "config": {
+                "ldap.attribute": ["mail"],
+                "user.model.attribute": ["email"],
+                "read.only": ["true"],
+                "always.read.value.from.ldap": ["true"],
+                "is.mandatory.in.ldap": ["false"]
+              }
+            },
+            {
+              "name": "first name",
+              "providerId": "user-attribute-ldap-mapper",
+              "config": {
+                "ldap.attribute": ["cn"],
+                "user.model.attribute": ["firstName"],
+                "read.only": ["true"],
+                "always.read.value.from.ldap": ["true"],
+                "is.mandatory.in.ldap": ["false"]
+              }
+            },
+            {
+              "name": "last name",
+              "providerId": "user-attribute-ldap-mapper",
+              "config": {
+                "ldap.attribute": ["sn"],
+                "user.model.attribute": ["lastName"],
+                "read.only": ["true"],
+                "always.read.value.from.ldap": ["true"],
+                "is.mandatory.in.ldap": ["false"]
+              }
+            },
+            {
+              "name": "groups",
+              "providerId": "group-ldap-mapper",
+              "config": {
+                "mode": ["LDAP_ONLY"],
+                "groups.dn": ["ou=groups,dc=dundermifflin,dc=com"],
+                "group.name.ldap.attribute": ["cn"],
+                "group.object.classes": ["groupOfNames"],
+                "membership.ldap.attribute": ["member"],
+                "membership.attribute.type": ["DN"],
+                "membership.user.ldap.attribute": ["uid"],
+                "groups.path": ["/"],
+                "preserve.group.inheritance": ["false"],
+                "ignore.missing.groups": ["false"],
+                "drop.non.existing.groups.during.sync": ["false"],
+                "user.roles.retrieve.strategy": ["LOAD_GROUPS_BY_MEMBER_ATTRIBUTE"],
+                "mapped.group.attributes": [""]
+              }
+            }
+          ]
+        }
+      }
+    ]
+  }
+}

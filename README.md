@@ -36,7 +36,9 @@ This repository contains the implementation plan and delivery docs for a demo ER
 ├── services/             # Backend services (gateway, sales, order, inventory, finance, profile, wuphf)
 ├── libs/                 # Shared contracts and SDKs
 ├── docs/                 # Architecture, standards, roadmap, contracts
-└── platform/             # Docker Compose, env, seed data
+├── platform/             # Seed data and third-party service configs
+├── docker-compose.yml    # Main stack (infra + app services)
+└── .env.example          # Compose environment defaults
 ```
 
 ## Demo Environment Targets
@@ -56,4 +58,14 @@ This repository contains the implementation plan and delivery docs for a demo ER
 ```bash
 pnpm install
 pnpm dev:portal
+```
+
+## Quickstart (Infrastructure)
+
+```bash
+cp .env.example .env
+docker compose --profile infra up -d
+
+# includes frontend/backend build targets
+docker compose --profile app up -d --build
 ```

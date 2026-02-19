@@ -1,0 +1,87 @@
+dn: ou=people,dc=dundermifflin,dc=com
+objectClass: organizationalUnit
+ou: people
+
+dn: ou=groups,dc=dundermifflin,dc=com
+objectClass: organizationalUnit
+ou: groups
+
+dn: uid=jhalpert,ou=people,dc=dundermifflin,dc=com
+objectClass: inetOrgPerson
+objectClass: organizationalPerson
+objectClass: person
+objectClass: top
+cn: Jim Halpert
+sn: Halpert
+uid: jhalpert
+mail: jhalpert@dundermifflin.com
+userPassword: password
+
+dn: uid=dphilbin,ou=people,dc=dundermifflin,dc=com
+objectClass: inetOrgPerson
+objectClass: organizationalPerson
+objectClass: person
+objectClass: top
+cn: Darryl Philbin
+sn: Philbin
+uid: dphilbin
+mail: dphilbin@dundermifflin.com
+userPassword: password
+
+dn: uid=amartin,ou=people,dc=dundermifflin,dc=com
+objectClass: inetOrgPerson
+objectClass: organizationalPerson
+objectClass: person
+objectClass: top
+cn: Angela Martin
+sn: Martin
+uid: amartin
+mail: amartin@dundermifflin.com
+userPassword: password
+
+dn: uid=mscott,ou=people,dc=dundermifflin,dc=com
+objectClass: inetOrgPerson
+objectClass: organizationalPerson
+objectClass: person
+objectClass: top
+cn: Michael Scott
+sn: Scott
+uid: mscott
+mail: mscott@dundermifflin.com
+userPassword: password
+
+dn: uid=pbeesly,ou=people,dc=dundermifflin,dc=com
+objectClass: inetOrgPerson
+objectClass: organizationalPerson
+objectClass: person
+objectClass: top
+cn: Pam Beesly
+sn: Beesly
+uid: pbeesly
+mail: pbeesly@dundermifflin.com
+userPassword: password
+
+dn: cn=sales,ou=groups,dc=dundermifflin,dc=com
+objectClass: groupOfNames
+cn: sales
+member: uid=jhalpert,ou=people,dc=dundermifflin,dc=com
+
+dn: cn=warehouse,ou=groups,dc=dundermifflin,dc=com
+objectClass: groupOfNames
+cn: warehouse
+member: uid=dphilbin,ou=people,dc=dundermifflin,dc=com
+
+dn: cn=accounting,ou=groups,dc=dundermifflin,dc=com
+objectClass: groupOfNames
+cn: accounting
+member: uid=amartin,ou=people,dc=dundermifflin,dc=com
+
+dn: cn=management,ou=groups,dc=dundermifflin,dc=com
+objectClass: groupOfNames
+cn: management
+member: uid=mscott,ou=people,dc=dundermifflin,dc=com
+
+dn: cn=admin_staff,ou=groups,dc=dundermifflin,dc=com
+objectClass: groupOfNames
+cn: admin_staff
+member: uid=pbeesly,ou=people,dc=dundermifflin,dc=com

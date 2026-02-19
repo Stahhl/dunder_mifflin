@@ -1,0 +1,36 @@
+services:
+  postgres:
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-dundermifflin}
+
+  keycloak:
+    environment:
+      KC_LOG_LEVEL: INFO
+
+  gateway:
+    environment:
+      SPRING_PROFILES_ACTIVE: local
+
+  profile-service:
+    environment:
+      SPRING_PROFILES_ACTIVE: local
+
+  sales-service:
+    environment:
+      SPRING_PROFILES_ACTIVE: local
+
+  order-service:
+    environment:
+      SPRING_PROFILES_ACTIVE: local
+
+  inventory-service:
+    environment:
+      SPRING_PROFILES_ACTIVE: local
+
+  finance-service:
+    environment:
+      SPRING_PROFILES_ACTIVE: local
+
+  wuphf-service:
+    environment:
+      SPRING_PROFILES_ACTIVE: local
