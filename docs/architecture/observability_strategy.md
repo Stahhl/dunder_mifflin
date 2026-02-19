@@ -16,13 +16,13 @@ This document details the observability strategy for Dunder Mifflin Scranton. We
     *   **Role:** The entry point for backend traces. Connects the frontend trace ID to the backend service calls.
     *   **Spans:** Incoming HTTP request -> Auth Check -> Outgoing Proxy Request.
 
-*   **Backend Microservices (Node.js/Go/Python):**
-    *   **Library:** Language-specific OTel SDKs (e.g., `@opentelemetry/sdk-node`).
+*   **Backend Microservices (Kotlin/Spring):**
+    *   **Library:** OTel Java agent or Micrometer Tracing OTel bridge.
     *   **Role:** Traces internal logic, database queries, and message publishing.
-    *   **Spans:** Controller Handler -> Service Logic -> DB Query / Kafka Publish.
+    *   **Spans:** Controller Handler -> Service Logic -> DB Query / AMQP Publish.
 
-*   **Message Bus (Kafka/RabbitMQ):**
-    *   **Library:** Client-side instrumentation (e.g., `opentelemetry-instrumentation-kafkajs`).
+*   **Message Bus (RabbitMQ):**
+    *   **Library:** AMQP client instrumentation for JVM services.
     *   **Role:** Propagates context *through* the message queue.
     *   **Spans:** Producer `send` -> Consumer `process`.
     *   **Context Propagation:** Trace IDs are embedded in message headers.
@@ -48,7 +48,7 @@ This document details the observability strategy for Dunder Mifflin Scranton. We
 #### A. Tracing (The Journey)
 *   **Tool:** **Jaeger** or **Tempo**.
 *   **Visualization:** A Gantt chart showing the request lifecycle.
-*   **Example:** User clicks "Buy Paper" -> Gateway (10ms) -> Sales Service (50ms) -> Postgres (5ms) -> Kafka (2ms) -> Inventory Service (20ms).
+*   **Example:** User clicks "Buy Paper" -> Gateway (10ms) -> Sales Service (50ms) -> Postgres (5ms) -> RabbitMQ (2ms) -> Inventory Service (20ms).
 
 #### B. Metrics (The Scoreboard)
 *   **Tool:** **Prometheus** (Storage) + **Grafana** (Dashboards).
@@ -75,13 +75,13 @@ This document details the observability strategy for Dunder Mifflin Scranton. We
 3.  **Sales Service:** Receives request.
     *   *Extracts:* Trace ID `T1`.
     *   *Creates:* Span ID `S3` (Child of `S2`).
-    *   *Action:* Saves to DB (Span `S4`), Publishes `ticket.issued` event to Kafka (Span `S5`).
-4.  **Kafka:** Queues the message.
-5.  **Inventory Service:** Consumes `ticket.issued`.
+    *   *Action:* Saves to DB (Span `S4`), Publishes `com.dundermifflin.order.created.v1` event to RabbitMQ (Span `S5`).
+4.  **RabbitMQ:** Queues the message.
+5.  **Inventory Service:** Consumes `com.dundermifflin.order.created.v1`.
     *   *Extracts:* Trace ID `T1` from message headers.
     *   *Creates:* Span ID `S6` (Child of `S5` - *Follows From*).
     *   *Action:* Updates stock.
-6.  **WUPHF Service:** Consumes `ticket.issued`.
+6.  **WUPHF Service:** Consumes order and shipment lifecycle events.
     *   *Extracts:* Trace ID `T1`.
     *   *Creates:* Span ID `S7` (Child of `S5`).
     *   *Action:* Sends email to Corporate.

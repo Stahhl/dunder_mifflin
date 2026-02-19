@@ -1,91 +1,42 @@
-# API Strategy & Event Governance
+# API and Event Governance
 
-## 1. Overview
-This document defines how Dunder Mifflin services communicate, share schemas, and manage changes without breaking the warehouse scanners. We prioritize **Schema-First Design** and **Strict Backwards Compatibility**.
+## 1. Source of Truth
 
-## 2. API Standards (Synchronous - REST)
+- REST source of truth: `docs/contracts/rest_api_v1.md`
+- Event source of truth: `docs/contracts/event_catalog_v1.md`
+- Any implementation must match these contracts exactly.
 
-*   **Specification:** OpenAPI 3.0 (Swagger).
-*   **Workflow:** Code-First (Annotated Controllers) -> Generate Spec.
-*   **Versioning:** URI Versioning (`/api/v1/orders`).
-    *   **Rule:** Breaking changes require a new version (`v2`).
-    *   **Deprecation:** Old versions must be supported for at least one fiscal quarter (or until Michael notices).
+## 2. REST Standards
 
-## 3. Event Standards (Asynchronous - Kafka)
+- Style: JSON over HTTP, resource-oriented routes.
+- Base path: `/api/v1`.
+- Breaking changes require `/api/v2`.
+- Error envelope is standardized across services.
+- Pagination uses `page`, `size`, `sort` query params.
+- Live UX updates use SSE endpoints exposed by gateway (for example `/orders/{orderId}/stream`).
 
-We use **CloudEvents** (structured mode) over JSON to ensure metadata (source, type, time) is consistent.
+## 3. Event Standards
 
-### A. The "Versioned Contracts" Repository
-To preserve team boundaries, contracts must be shared as **versioned schemas/artifacts**, not as cross-service source code.
+- Format: CloudEvents 1.0 over RabbitMQ (AMQP 0-9-1).
+- Event type naming: `com.dundermifflin.<domain>.<action>.v<version>`.
+- Routing keys are defined in `docs/contracts/event_catalog_v1.md`.
+- Event payloads are additive-only for non-breaking evolution.
 
-*   **Source of truth:**
-    *   OpenAPI specs for REST contracts.
-    *   AsyncAPI and JSON Schema for event contracts.
-*   **Distribution:**
-    *   Publish versioned artifacts from a dedicated contracts root/repo (for example `contracts/dunder-events`).
-    *   Backend services and frontend apps consume published versions through code generation in their own build pipelines.
-*   **Usage:**
-    *   `sales-service` generates publisher DTOs/serializers from contract artifact version `1.0.0`.
-    *   `inventory-service` generates consumer models from the same version.
-    *   Frontend apps generate TypeScript clients/types from published OpenAPI versions.
+## 4. Compatibility Rules
 
-### B. Event Versioning Strategy
+1. Never remove or rename fields in an existing version.
+2. New required behavior must be introduced as a new version.
+3. Producers may dual-publish during migrations.
+4. Consumers must ignore unknown fields.
 
-We enforce **Forward-Only, Additive Changes** (The "No Take-Backs" Rule).
+## 5. Idempotency Rules
 
-#### 1. The Payload Wrapper
-All event payloads are wrapped in a versioned object structure to allow multi-version support in the same topic.
+- Mutating HTTP endpoints that may be retried must support `Idempotency-Key`.
+- Warehouse offline retry/sync must rely on idempotency keys.
+- Event deduplication tables/outbox-inbox choreography are intentionally out of scope for this demo.
 
-```json
-{
-  "specversion": "1.0",
-  "type": "com.dundermifflin.sales.OrderCreated",
-  "source": "/sales-service",
-  "data": {
-    "v1": {
-      "orderId": "123",
-      "amount": 100.00
-    },
-    "v2": {
-      "orderId": "123",
-      "totalAmount": 100.00,
-      "currency": "USD"
-    }
-  }
-}
-```
+## 6. Contract Testing Expectations
 
-*   **Pro:** Consumers can read `v1` or `v2` from the same message.
-*   **Con:** Message size grows. (Acceptable for paper sales).
-
-#### 2. Alternative: Topic Versioning
-If a schema change is radically incompatible (structural break), we fork the topic.
-*   Old: `sales.orders.v1`
-*   New: `sales.orders.v2`
-*   **Migration:** The producer Dual-Writes to both topics for a transition period.
-
-### C. Governance Rules
-
-1.  **Never delete a field.** Mark it `@Deprecated`.
-2.  **Never rename a field.** Add a new field and deprecate the old one.
-3.  **Always provide default values** for new fields (Consumer tolerance).
-
-## 4. Contracts Repository Structure
-
-```
-contracts/dunder-events/
-├── openapi/
-│   └── sales-api.v1.yaml
-├── asyncapi/
-│   └── order-events.v1.yaml
-├── jsonschema/
-│   ├── sales.order-created.v1.json
-│   └── sales.order-created.v2.json
-└── CHANGELOG.md
-```
-
-## 5. Testing Contracts
-
-We use **Consumer-Driven Contracts (Spring Cloud Contract)** or standard integration tests.
-*   **Producer Test:** Ensures the app generates JSON matching the published contract schema version.
-*   **Consumer Test:** Ensures the app can deserialize sample payloads from the contract artifact fixtures.
+- Producer tests verify payloads against contract examples.
+- Consumer tests verify compatibility with current version and prior non-deprecated version.
+- Contract updates must be reviewed in the same PR as implementation updates.

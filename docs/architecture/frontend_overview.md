@@ -1,70 +1,43 @@
-# Dunder Mifflin Frontend Architecture
+# Dunder Mifflin Demo - Frontend Overview
 
-This document details the frontend applications for Dunder Mifflin Scranton. The strategy adopts a **Micro-Frontend** approach (or separate specialized SPAs) to cater to the distinct needs of Sales, Warehouse, and Corporate.
+This document defines the frontend app lineup used by the roadmap.
 
-## Core Applications
+## App Portfolio
 
-### 1. The Scranton Portal (Main Intranet)
-*   **Audience:** All Staff (Michael, Pam, Oscar, etc.)
-*   **Tech Stack:** React, Tailwind CSS.
-*   **Purpose:** The central hub. News feed, company announcements, HR forms, and links to other apps.
-*   **Features:**
-    *   **"The Dundies" Dashboard:** Employee recognition board.
-    *   **"Threat Level Midnight" Alert System:** Corporate emergency notifications.
-    *   **PPC Calendar:** Party Planning Committee events.
-    *   **Conference Room Booker:** Resolves conflicts over the conference room.
+### Scranton Portal (`apps/portal`)
+- Audience: all authenticated users.
+- Stack: React + TypeScript + Vite.
+- Purpose: app launcher, role-aware navigation, shared notifications entry point.
 
-### 2. Dunder Mifflin Infinity (Sales Dashboard)
-*   **Audience:** Sales Staff (Jim, Dwight, Phyllis, Stanley, Andy)
-*   **Tech Stack:** React (or Next.js) for SEO/Performance, Chart.js for visualizations.
-*   **Purpose:** The "Ryan Howard" modernization initiative.
-*   **Features:**
-    *   **Lead Tracker:** Kanban board for managing leads (Glengarry leads vs. regular).
-    *   **Commission Calculator:** Real-time earnings estimator.
-    *   **Client Rolodex:** Digital replacement for the physical cards.
-    *   **Video Chat:** Integration for remote sales calls (rarely used).
+### Infinity (`apps/infinity`)
+- Audience: Sales and Management.
+- Stack: React + TypeScript + Vite.
+- Purpose: leads board, lead conversion, order placement, order timeline.
 
-### 3. The Warehouse App (Mobile/Tablet)
-*   **Audience:** Warehouse Crew (Darryl, Roy, Madge)
-*   **Tech Stack:** React Native with Expo.
-*   **Purpose:** Inventory management on the floor.
-*   **Features:**
-    *   **Scanner:** Barcode scanning for paper reams.
-    *   **Shipment Loader:** Checklist for loading trucks.
-    *   **Safety Counter:** "Days Since Last Accident" (resets automatically when Michael enters).
-    *   **Baler Lock:** Digital safety checklist before baler operation.
+### Warehouse Mobile (`apps/warehouse-mobile`)
+- Audience: Warehouse and Management.
+- Stack: Expo (React Native + TypeScript).
+- Purpose: scanning, pick list, dispatch, offline mutation queue.
 
-### 4. Accounting & Finance Suite
-*   **Audience:** Accounting (Angela, Oscar, Kevin)
-*   **Tech Stack:** Angular (Strict, structured, like Angela).
-*   **Purpose:** Number crunching and payroll.
-*   **Features:**
-    *   **Ledger View:** High-density data grids.
-    *   **Expense Approval:** Denying Michael's expense reports.
-    *   **Keleven Widget:** A special calculator for Kevin (Auto-corrects math errors... poorly).
+### Accounting Suite (`apps/accounting`)
+- Audience: Accounting and Management.
+- Stack: Angular 18+ + TypeScript strict mode.
+- Purpose: expense queue, detail review, approve/reject workflow.
 
-### 5. WUPHF.com (Notification Center)
-*   **Audience:** Everyone
-*   **Tech Stack:** Web Component / Widget embedded in other apps.
-*   **Purpose:** Unified notification stream.
-*   **Features:**
-    *   **Cross-Platform Alerts:** Pops up on Desktop, Mobile, and Fax machines.
-    *   **Urgency Levels:** "Normal", "Urgent", "Michael".
+### WUPHF Widget (`apps/wuphf-widget`)
+- Audience: embedded in portal/infinity/accounting.
+- Stack: Web Components (Lit or vanilla custom elements).
+- Purpose: unified notification center.
 
----
+## Shared Frontend Contracts
 
-## Shared Infrastructure
+- All apps consume gateway APIs from `docs/contracts/rest_api_v1.md`.
+- Event-driven UX updates map to statuses defined in `docs/contracts/event_catalog_v1.md`.
+- Role-to-nav behavior follows `docs/architecture/identity_access.md`.
 
-*   **Design System:** "Sabre UI" (Transitioning from legacy Dunder Mifflin styles).
-    *   **Components:** Buttons, Data Grids, Modals.
-    *   **Theme:** Professional Grey/Blue with splashes of "Golden Ticket" Gold.
-*   **Authentication:**
-    *   All apps use **OIDC/OAuth2** to redirect to the **Keycloak** login page.
-    *   Session management handled by the **BFF Gateway**.
+## Cross-App UX Rules
 
-## Development Plan
-
-1.  **Phase 1:** "The Scranton Portal" (Core shell & navigation).
-2.  **Phase 2:** "Dunder Mifflin Infinity" (Sales functionality).
-3.  **Phase 3:** Warehouse mobile app (React Native + Expo).
-4.  **Phase 4:** Accounting Suite & WUPHF integration.
+- Authentication must always route through Keycloak.
+- Unauthorized routes must redirect to login.
+- Error states must be actionable (no silent blank screens).
+- Trace context headers must be propagated on all API calls.
