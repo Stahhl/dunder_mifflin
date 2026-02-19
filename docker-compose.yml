@@ -372,12 +372,35 @@ services:
       - "${WAREHOUSE_MOBILE_PORT:-3004}:3004"
     networks: [dmf]
 
+  unit-tests:
+    image: node:20-alpine
+    profiles: ["test"]
+    init: true
+    working_dir: /workspace
+    command:
+      - /bin/sh
+      - -lc
+      - >
+        corepack enable &&
+        corepack prepare pnpm@10.4.0 --activate &&
+        pnpm config set store-dir /pnpm-store &&
+        pnpm install --no-frozen-lockfile &&
+        pnpm -r --if-present test
+    environment:
+      CI: "true"
+      PNPM_STORE_PATH: /pnpm-store
+    volumes:
+      - ./:/workspace
+      - pnpm-store:/pnpm-store
+    networks: [dmf]
+
 volumes:
   postgres-data:
   rabbitmq-data:
   keycloak-data:
   ldap-data:
   ldap-config:
+  pnpm-store:
 
 networks:
   dmf:

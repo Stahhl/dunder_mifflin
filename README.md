@@ -41,26 +41,16 @@ This repository contains the implementation plan and delivery docs for a demo ER
 └── .env.example          # Compose environment defaults
 ```
 
-## Demo Environment Targets
+## Host Dependencies
 
-- Docker Compose v2
-- Java 21
-- Node.js 20+
-- pnpm
+- Docker with Docker Compose v2
 
 ## Current State
 
 - PR1 scaffold is in progress with a working Portal app at `apps/portal`.
 - Planning/specification docs remain the source of truth for roadmap and contracts.
 
-## Quickstart (Portal PR1)
-
-```bash
-pnpm install
-pnpm dev:portal
-```
-
-## Quickstart (Infrastructure)
+## Quickstart (Docker-Only)
 
 ```bash
 cp .env.example .env
@@ -68,4 +58,7 @@ docker compose --profile infra up -d
 
 # includes frontend/backend build targets
 docker compose --profile app up -d --build
+
+# run all workspace unit tests in Docker
+docker compose --profile test run --rm unit-tests
 ```

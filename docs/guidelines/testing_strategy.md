@@ -4,8 +4,11 @@
 
 Validate the demo's golden user journeys across gateway, services, and frontend apps.
 
+Host dependency: Docker with Docker Compose v2 plugin.
+
 ## 2. Tooling
 
+- Unit tests: Vitest (Portal) via Docker Compose `test` profile (`unit-tests` service).
 - Framework: Playwright (TypeScript).
 - Runtime: Docker Compose `e2e` profile.
 - Artifacts: traces, screenshots, and videos on failure.
@@ -15,6 +18,12 @@ Validate the demo's golden user journeys across gateway, services, and frontend 
 - Bring up full stack with seeded users/data.
 - Use stable test credentials from `docs/architecture/identity_access.md`.
 - Reset test data between suites or isolate via unique IDs.
+
+Unit test command:
+
+```bash
+docker compose --profile test run --rm unit-tests
+```
 
 ## 4. Golden Path Specs
 

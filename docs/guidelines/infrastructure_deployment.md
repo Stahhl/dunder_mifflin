@@ -4,7 +4,11 @@
 
 Run the demo platform with a single command using Docker Compose.
 
-## 2. Compose Layout
+## 2. Host Dependency
+
+- Docker with Docker Compose v2 plugin.
+
+## 3. Compose Layout
 
 - `docker-compose.yml`: primary stack definition.
 - `docker-compose.override.yml`: local development overrides.
@@ -12,14 +16,15 @@ Run the demo platform with a single command using Docker Compose.
 - `platform/keycloak/realm-export.json`: seeded realm config.
 - `platform/ldap/users.ldif`: seeded users/groups.
 
-## 3. Runtime Profiles
+## 4. Runtime Profiles
 
 - `app`: full stack (frontend + backend + infra + observability).
 - `infra`: databases, broker, IAM only.
 - `observability`: otel, prometheus, loki, grafana, jaeger.
 - `e2e`: app profile plus test seed utilities.
+- `test`: unit test runner containers.
 
-## 4. Service Inventory
+## 5. Service Inventory
 
 ### Infrastructure
 - `postgres`
@@ -51,7 +56,7 @@ Run the demo platform with a single command using Docker Compose.
 - `grafana`
 - `jaeger`
 
-## 5. Environment Defaults
+## 6. Environment Defaults
 
 Required variables (example values):
 - `POSTGRES_USER=dundermifflin`
@@ -62,21 +67,21 @@ Required variables (example values):
 - `KEYCLOAK_ADMIN_PASSWORD=admin`
 - `KEYCLOAK_REALM=scranton-branch`
 
-## 6. Data Store Topology
+## 7. Data Store Topology
 
 - One PostgreSQL container with separate schemas per service (`sales`, `orders`, `inventory`, `finance`, `profile`, `notifications`, `keycloak`).
 - One RabbitMQ broker for all platform exchanges/queues listed in `docs/contracts/event_catalog_v1.md`.
 - LDAP remains the source of truth for identity groups and user records.
 - Service-to-service database access is disallowed outside owned schema.
 
-## 7. Startup and Health Rules
+## 8. Startup and Health Rules
 
 - All services must define `healthcheck`.
 - `depends_on` must use `condition: service_healthy` where supported.
 - Gateway starts after IAM and required backend services are healthy.
 - Frontends start after gateway is healthy.
 
-## 8. Required Commands
+## 9. Required Commands
 
 ```bash
 # full demo stack
@@ -84,4 +89,7 @@ docker compose --profile app up -d
 
 # infra only
 docker compose --profile infra up -d
+
+# unit tests
+docker compose --profile test run --rm unit-tests
 ```

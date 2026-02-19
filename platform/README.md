@@ -33,6 +33,9 @@ Seed helpers used by compose:
 ```bash
 cp .env.example .env
 docker compose --profile infra up -d
+
+# run workspace unit tests in Docker
+docker compose --profile test run --rm unit-tests
 ```
 
 ## Common Endpoints

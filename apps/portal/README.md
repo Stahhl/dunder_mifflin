@@ -2,11 +2,10 @@
 
 PR1 implementation scaffold for login bootstrap and role-aware portal navigation.
 
-## Local run
+## Unit Tests (Docker-Only)
 
 ```bash
-pnpm install
-pnpm dev:portal
+docker compose --profile test run --rm unit-tests
 ```
 
 ## Environment
