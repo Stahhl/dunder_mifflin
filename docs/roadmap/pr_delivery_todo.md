@@ -48,8 +48,8 @@ This roadmap breaks work into sequential PRs. Each PR is sized to be reviewable 
 | PR2 | `tests/e2e/specs/auth-sales-navigation.spec.ts` |
 | PR3 | `tests/e2e/specs/sales-order-placement.spec.ts` |
 | PR4 | `tests/e2e/specs/warehouse-dispatch.spec.ts` |
-| PR5 | Planned: Infinity standalone + timeline spec (`sales-order-timeline.spec.ts` or equivalent) |
-| PR6 | Planned: accounting approval flow spec |
+| PR5 | `tests/e2e/specs/sales-order-timeline.spec.ts` |
+| PR6 | `tests/e2e/specs/accounting-expense-decision.spec.ts` |
 | PR7 | Planned: notification widget cross-app behavior spec |
 | PR8 | Planned: offline replay/idempotency spec |
 | PR9 | Planned: reliability/error-state regression spec |
@@ -145,7 +145,7 @@ This roadmap breaks work into sequential PRs. Each PR is sized to be reviewable 
 - Backend services: `services/gateway` (SSE stream support and authz), `services/order-service`, `services/inventory-service` event integration
 - Infra dependencies: RabbitMQ event flow + compose wiring for Infinity web container
 - Non-goals: Sales CRM lead pipeline (`services/sales-service`) in this PR
-- E2E coverage: planned new spec for timeline/live updates
+- E2E coverage: `tests/e2e/specs/sales-order-timeline.spec.ts`
 
 **Scope**
 - Extract current gateway-rendered Infinity UI into `apps/infinity`.
@@ -166,7 +166,7 @@ This roadmap breaks work into sequential PRs. Each PR is sized to be reviewable 
 - Backend services: `services/gateway` expense routes + `services/finance-service` decision workflow
 - Infra dependencies: PostgreSQL + RabbitMQ as required by finance workflows
 - Non-goals: cross-app notification center behavior
-- E2E coverage: planned accounting flow spec
+- E2E coverage: `tests/e2e/specs/accounting-expense-decision.spec.ts`
 
 **Scope**
 - Build Angular expense queue and detail views.

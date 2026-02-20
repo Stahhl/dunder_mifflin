@@ -9,11 +9,15 @@
     "dev:infinity": "pnpm --filter @dunder/infinity dev",
     "build:infinity": "pnpm --filter @dunder/infinity build",
     "test:infinity": "pnpm --filter @dunder/infinity test",
+    "dev:accounting": "pnpm --filter @dunder/accounting dev",
+    "build:accounting": "pnpm --filter @dunder/accounting build",
+    "test:accounting": "pnpm --filter @dunder/accounting test",
     "test:e2e:pr2": "playwright test --config tests/e2e/config/playwright.config.ts tests/e2e/specs/auth-sales-navigation.spec.ts",
     "test:e2e:pr3": "playwright test --config tests/e2e/config/playwright.config.ts tests/e2e/specs/sales-order-placement.spec.ts",
     "test:e2e:pr4": "playwright test --config tests/e2e/config/playwright.config.ts tests/e2e/specs/warehouse-dispatch.spec.ts",
     "test:e2e:pr5": "playwright test --config tests/e2e/config/playwright.config.ts tests/e2e/specs/sales-order-timeline.spec.ts",
-    "test:e2e:smoke": "playwright test --config tests/e2e/config/playwright.config.ts tests/e2e/specs/auth-sales-navigation.spec.ts tests/e2e/specs/sales-order-placement.spec.ts tests/e2e/specs/warehouse-dispatch.spec.ts tests/e2e/specs/sales-order-timeline.spec.ts"
+    "test:e2e:pr6": "playwright test --config tests/e2e/config/playwright.config.ts tests/e2e/specs/accounting-expense-decision.spec.ts",
+    "test:e2e:smoke": "playwright test --config tests/e2e/config/playwright.config.ts tests/e2e/specs/auth-sales-navigation.spec.ts tests/e2e/specs/sales-order-placement.spec.ts tests/e2e/specs/warehouse-dispatch.spec.ts tests/e2e/specs/sales-order-timeline.spec.ts tests/e2e/specs/accounting-expense-decision.spec.ts"
   },
   "devDependencies": {
     "@playwright/test": "1.51.1"

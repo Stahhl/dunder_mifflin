@@ -3,6 +3,7 @@ package com.dundermifflin.gateway.application.controller
 import com.dundermifflin.gateway.application.dto.GatewayProperties
 import com.dundermifflin.gateway.domain.model.GatewaySession
 import com.dundermifflin.gateway.domain.service.SessionService
+import com.dundermifflin.gateway.infrastructure.client.FinanceServiceClient
 import com.dundermifflin.gateway.infrastructure.client.OrderServiceClient
 import com.dundermifflin.gateway.infrastructure.security.OidcService
 import jakarta.servlet.http.HttpServletRequest
@@ -32,7 +33,8 @@ class GatewayController(
     private val sessionService: SessionService,
     private val oidcService: OidcService,
     private val gatewayProperties: GatewayProperties,
-    private val orderServiceClient: OrderServiceClient
+    private val orderServiceClient: OrderServiceClient,
+    private val financeServiceClient: FinanceServiceClient
 ) {
     @GetMapping("/oauth2/authorization/keycloak")
     fun oauthStart(
@@ -257,6 +259,37 @@ class GatewayController(
             .body(emitter)
     }
 
+    @PostMapping("/api/v1/expenses", produces = [MediaType.APPLICATION_JSON_VALUE])
+    fun createExpense(
+        request: HttpServletRequest,
+        @RequestBody(required = false) body: String?
+    ): ResponseEntity<Any> {
+        val session = requireAccountingSession(request) ?: return accountingUnauthOrForbidden(request)
+        return forwardFinanceJsonResponse("/internal/expenses", "POST", session.userId, body ?: "")
+    }
+
+    @GetMapping("/api/v1/expenses", produces = [MediaType.APPLICATION_JSON_VALUE])
+    fun listExpenses(request: HttpServletRequest): ResponseEntity<Any> {
+        val session = requireAccountingSession(request) ?: return accountingUnauthOrForbidden(request)
+        val query = request.queryString?.takeIf { it.isNotBlank() }?.let { "?$it" } ?: ""
+        return forwardFinanceJsonResponse("/internal/expenses$query", "GET", session.userId)
+    }
+
+    @PostMapping("/api/v1/expenses/{expenseId}/decision", produces = [MediaType.APPLICATION_JSON_VALUE])
+    fun decideExpense(
+        request: HttpServletRequest,
+        @PathVariable expenseId: String,
+        @RequestBody(required = false) body: String?
+    ): ResponseEntity<Any> {
+        val session = requireAccountingSession(request) ?: return accountingUnauthOrForbidden(request)
+        return forwardFinanceJsonResponse(
+            "/internal/expenses/${encodePath(expenseId)}/decision",
+            "POST",
+            session.userId,
+            body ?: ""
+        )
+    }
+
     @GetMapping("/api/v1/warehouse/shipments", produces = [MediaType.APPLICATION_JSON_VALUE])
     fun listShipments(
         request: HttpServletRequest,
@@ -322,6 +355,7 @@ class GatewayController(
                 <h1>Dunder Mifflin Gateway</h1>
                 $authNotice
                 <p><a href="/infinity">Open Sales App (Infinity)</a></p>
+                <p><a href="/accounting">Open Accounting App</a></p>
               </body>
             </html>
             """.trimIndent()
@@ -344,7 +378,7 @@ class GatewayController(
         }
 
         if (!canAccessOrders(session.roles)) {
-            return htmlResponse(HttpStatus.FORBIDDEN, renderForbiddenPage())
+            return htmlResponse(HttpStatus.FORBIDDEN, renderForbiddenPage("Sales"))
         }
 
         return ResponseEntity.status(HttpStatus.FOUND)
@@ -353,8 +387,38 @@ class GatewayController(
             .build<Void>()
     }
 
+    @GetMapping("/apps/accounting")
+    fun accountingShortcut(): ResponseEntity<Void> = ResponseEntity.status(HttpStatus.FOUND)
+        .header(HttpHeaders.LOCATION, "/accounting")
+        .build()
+
+    @GetMapping("/accounting")
+    fun accounting(request: HttpServletRequest): ResponseEntity<*> {
+        val session = sessionService.readSession(request)?.second
+        if (session == null) {
+            val returnTo = URLEncoder.encode("/accounting", StandardCharsets.UTF_8)
+            return ResponseEntity.status(HttpStatus.FOUND)
+                .header(HttpHeaders.LOCATION, "/oauth2/authorization/keycloak?returnTo=$returnTo")
+                .build<Void>()
+        }
+
+        if (!canAccessAccounting(session.roles)) {
+            return htmlResponse(HttpStatus.FORBIDDEN, renderForbiddenPage("Accounting"))
+        }
+
+        return ResponseEntity.status(HttpStatus.FOUND)
+            .header(HttpHeaders.CACHE_CONTROL, "no-store")
+            .header(HttpHeaders.LOCATION, accountingWebLocation())
+            .build<Void>()
+    }
+
     private fun infinityWebLocation(): String {
         val base = gatewayProperties.infinityWebBaseUrl.trim().ifBlank { "http://localhost:3001" }
+        return if (base.endsWith('/')) base else "$base/"
+    }
+
+    private fun accountingWebLocation(): String {
+        val base = gatewayProperties.accountingWebBaseUrl.trim().ifBlank { "http://localhost:3002" }
         return if (base.endsWith('/')) base else "$base/"
     }
 
@@ -367,6 +431,11 @@ class GatewayController(
     private fun requireSalesSession(request: HttpServletRequest): GatewaySession? {
         val session = sessionService.readSession(request)?.second ?: return null
         return session.takeIf { canAccessOrders(it.roles) }
+    }
+
+    private fun requireAccountingSession(request: HttpServletRequest): GatewaySession? {
+        val session = sessionService.readSession(request)?.second ?: return null
+        return session.takeIf { canAccessAccounting(it.roles) }
     }
 
     private fun requireWarehousePrincipal(request: HttpServletRequest): RequestPrincipal? {
@@ -429,12 +498,39 @@ class GatewayController(
         }
     }
 
+    private fun accountingUnauthOrForbidden(request: HttpServletRequest): ResponseEntity<Any> {
+        val hasSession = sessionService.readSession(request) != null
+        return if (!hasSession) {
+            ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(
+                mapOf(
+                    "error" to mapOf(
+                        "code" to "UNAUTHENTICATED",
+                        "message" to "Login is required"
+                    )
+                )
+            )
+        } else {
+            ResponseEntity.status(HttpStatus.FORBIDDEN).body(
+                mapOf(
+                    "error" to mapOf(
+                        "code" to "FORBIDDEN",
+                        "message" to "Accounting role is required to access expenses"
+                    )
+                )
+            )
+        }
+    }
+
     private fun canAccessOrders(roles: List<String>): Boolean {
         return roles.any { it == "sales-associate" || it == "manager" }
     }
 
     private fun canAccessWarehouse(roles: List<String>): Boolean {
         return roles.any { it == "warehouse-operator" || it == "manager" }
+    }
+
+    private fun canAccessAccounting(roles: List<String>): Boolean {
+        return roles.any { it == "accountant" || it == "manager" }
     }
 
     private fun forwardJsonResponse(
@@ -445,6 +541,18 @@ class GatewayController(
         additionalHeaders: Map<String, String> = emptyMap()
     ): ResponseEntity<Any> {
         val forwarded = orderServiceClient.forward(pathAndQuery, method, userId, body, additionalHeaders)
+        return ResponseEntity.status(forwarded.statusCode)
+            .headers(forwarded.headers)
+            .body(forwarded.body ?: "")
+    }
+
+    private fun forwardFinanceJsonResponse(
+        pathAndQuery: String,
+        method: String,
+        userId: String,
+        body: String? = null
+    ): ResponseEntity<Any> {
+        val forwarded = financeServiceClient.forward(pathAndQuery, method, userId, body)
         return ResponseEntity.status(forwarded.statusCode)
             .headers(forwarded.headers)
             .body(forwarded.body ?: "")
@@ -506,7 +614,7 @@ class GatewayController(
         </html>
         """.trimIndent()
 
-    private fun renderForbiddenPage(): String =
+    private fun renderForbiddenPage(appName: String): String =
         """
         <!doctype html>
         <html lang="en">
@@ -516,7 +624,7 @@ class GatewayController(
           </head>
           <body>
             <h1>Access denied</h1>
-            <p>Your account does not have permission to open the Sales app.</p>
+            <p>Your account does not have permission to open the ${escapeHtml(appName)} app.</p>
             <p><a href="/">Return home</a></p>
           </body>
         </html>
