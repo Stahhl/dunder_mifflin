@@ -1,0 +1,29 @@
+server:
+  port: ${SERVER_PORT:8081}
+
+spring:
+  application:
+    name: gateway
+  threads:
+    virtual:
+      enabled: true
+
+gateway:
+  keycloak-realm: ${KEYCLOAK_REALM:scranton-branch}
+  keycloak-internal-base-url: ${KEYCLOAK_INTERNAL_BASE_URL:http://keycloak:8080}
+  keycloak-public-port: ${KEYCLOAK_PUBLIC_PORT:8080}
+  oidc-client-id: ${OIDC_CLIENT_ID:dunder-mifflin-gateway}
+  oidc-client-secret: ${OIDC_CLIENT_SECRET:gateway-secret-change-me}
+  order-service-base-url: ${ORDER_SERVICE_BASE_URL:http://order-service:8093}
+  session-max-age-ms: ${SESSION_MAX_AGE_MS:1800000}
+  oidc-state-max-age-ms: ${OIDC_STATE_MAX_AGE_MS:300000}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,prometheus
+  endpoint:
+    health:
+      probes:
+        enabled: true
