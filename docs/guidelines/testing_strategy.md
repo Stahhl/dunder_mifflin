@@ -27,18 +27,24 @@ docker compose --profile test run --rm unit-tests
 
 ## 4. Golden Path Specs
 
-1. Sales lead-to-order:
+1. PR2 auth and app navigation gate:
+- Sales user opens Sales app route unauthenticated.
+- Gateway redirects to Keycloak login.
+- User signs in with PR1 seeded credentials.
+- Browser is redirected back to Sales app route.
+
+2. Sales lead-to-order:
 - Sales user logs in.
 - Creates lead, moves stages, converts lead.
 - Places order and sees order in history.
 
-2. Warehouse dispatch:
+3. Warehouse dispatch:
 - Warehouse user logs in.
 - Opens pending shipment.
 - Scans line item and dispatches shipment.
 - Sales timeline reflects status within SLA.
 
-3. Accounting expense approval:
+4. Accounting expense approval:
 - Manager submits expense.
 - Accountant approves/rejects with comment.
 - Submitter sees final decision and reason.
@@ -54,6 +60,7 @@ tests/e2e/
 │   ├── users.json
 │   └── products.json
 ├── specs/
+│   ├── auth-sales-navigation.spec.ts
 │   ├── sales-lead-order.spec.ts
 │   ├── warehouse-dispatch.spec.ts
 │   └── accounting-expense.spec.ts

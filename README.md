@@ -47,7 +47,8 @@ This repository contains the implementation plan and delivery docs for a demo ER
 
 ## Current State
 
-- PR1 scaffold is in progress with a working Portal app at `apps/portal`.
+- PR1 baseline is complete for local infra/auth setup and portal role-aware navigation.
+- PR2 focus is Sales app access flow through gateway + Keycloak roundtrip with Playwright E2E validation.
 - Planning/specification docs remain the source of truth for roadmap and contracts.
 
 ## Quickstart (Docker-Only)

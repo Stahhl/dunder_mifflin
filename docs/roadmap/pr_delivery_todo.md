@@ -21,31 +21,32 @@ This roadmap breaks work into sequential PRs. Each PR is sized to be reviewable 
 - App links are shown/hidden by role.
 - Session expiration redirects to login.
 
-## PR 2: Sales Dashboard MVP (Leads Board)
-**User-visible outcome:** Sales users can create and manage leads in the Infinity app.
+## PR 2: Sales App Access Flow (Gateway + Keycloak)
+**User-visible outcome:** Sales users can reach the Sales app through the gateway login flow.
 
 **Scope**
-- Create lead list + Kanban board in Infinity.
-- Add create/edit/convert lead actions.
-- Connect to `sales-service` lead endpoints with typed API client.
+- Add Sales app entry point/routing from portal through gateway.
+- Enforce unauthenticated redirect to Keycloak and return to Sales app after successful login.
+- Keep Sales app content as a placeholder page (no lead/order business functionality yet).
+- Add Playwright E2E coverage for this auth/navigation flow.
 
 **Acceptance**
-- New lead appears immediately in board.
-- Lead stage changes persist after refresh.
-- Conversion action emits expected backend request and success state.
+- Sales staff user is redirected to Keycloak when opening Sales app unauthenticated.
+- After successful login, user returns to Sales app route through gateway session flow.
+- Playwright E2E test for this flow passes.
 
 ## PR 3: Order Placement Flow from Sales
-**User-visible outcome:** Sales users can place paper orders for converted clients.
+**User-visible outcome:** Sales users can place paper orders from Infinity.
 
 **Scope**
 - Add order creation UI in Infinity.
-- Add product/quantity entry and validation.
+- Add customer/product/quantity entry and validation.
 - Persist orders through `order-service` via gateway.
 
 **Acceptance**
 - Valid orders can be submitted end-to-end.
 - Order appears in order history with status.
-- Validation blocks invalid quantities and missing client.
+- Validation blocks invalid quantities and missing customer.
 
 ## PR 4: Warehouse Mobile MVP (Expo) - Scanner + Pick List
 **User-visible outcome:** Warehouse users can scan items and process pending shipments from mobile.
