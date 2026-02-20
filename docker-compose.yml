@@ -188,6 +188,8 @@ services:
       OIDC_CLIENT_ID: dunder-mifflin-gateway
       OIDC_CLIENT_SECRET: gateway-secret-change-me
       ORDER_SERVICE_BASE_URL: http://order-service:8093
+      INFINITY_WEB_BASE_URL: http://host.docker.internal:${INFINITY_WEB_PORT:-3001}
+      MOBILE_WEB_ORIGINS: http://localhost:${INFINITY_WEB_PORT:-3001},http://host.docker.internal:${INFINITY_WEB_PORT:-3001},http://localhost:${WAREHOUSE_MOBILE_PORT:-3004},http://host.docker.internal:${WAREHOUSE_MOBILE_PORT:-3004}
     ports:
       - "${GATEWAY_PORT:-8081}:8081"
     healthcheck:
@@ -477,6 +479,7 @@ services:
         ready=0; for i in $(seq 1 90); do if curl -fsS "$${PLAYWRIGHT_BASE_URL}/actuator/health" >/dev/null 2>&1; then ready=1; break; fi; sleep 2; done; [ "$$ready" -eq 1 ] &&
         ready=0; for i in $(seq 1 90); do if curl -fsS "http://host.docker.internal:${KEYCLOAK_PORT:-8080}/realms/${KEYCLOAK_REALM:-scranton-branch}/.well-known/openid-configuration" >/dev/null 2>&1; then ready=1; break; fi; sleep 2; done; [ "$$ready" -eq 1 ] &&
         ready=0; for i in $(seq 1 90); do if curl -fsS "$${PLAYWRIGHT_WAREHOUSE_BASE_URL}/" >/dev/null 2>&1; then ready=1; break; fi; sleep 2; done; [ "$$ready" -eq 1 ] &&
+        ready=0; for i in $(seq 1 90); do if curl -fsS "$${PLAYWRIGHT_INFINITY_BASE_URL}/" >/dev/null 2>&1; then ready=1; break; fi; sleep 2; done; [ "$$ready" -eq 1 ] &&
         pnpm config set store-dir /pnpm-store &&
         pnpm install --no-frozen-lockfile &&
         pnpm test:e2e:smoke
@@ -484,6 +487,7 @@ services:
       CI: "true"
       PLAYWRIGHT_BASE_URL: http://host.docker.internal:${GATEWAY_PORT:-8081}
       PLAYWRIGHT_WAREHOUSE_BASE_URL: http://host.docker.internal:${WAREHOUSE_MOBILE_PORT:-3004}
+      PLAYWRIGHT_INFINITY_BASE_URL: http://host.docker.internal:${INFINITY_WEB_PORT:-3001}
     extra_hosts:
       - host.docker.internal:host-gateway
     volumes:

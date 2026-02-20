@@ -10,7 +10,7 @@ test("warehouse mobile can dispatch shipment and sales sees SHIPPED", async ({ b
   await page.locator("#password").fill("password");
   await page.locator("#kc-login").click();
 
-  await expect(page).toHaveURL(/\/infinity$/);
+  await expect(page).toHaveURL(/(\/infinity$|:3001\/?$)/);
 
   const clientId = `client_pr4_${Date.now()}`;
   const requestedShipDate = tomorrowAsIsoDate();

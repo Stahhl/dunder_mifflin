@@ -8,12 +8,14 @@ test("sales user can place a valid order and sees it in history", async ({ page 
   await page.locator("#password").fill("password");
   await page.locator("#kc-login").click();
 
-  await expect(page).toHaveURL(/\/infinity$/);
+  await expect(page).toHaveURL(/(\/infinity$|:3001\/?$)/);
   await expect(page.getByRole("heading", { name: /Infinity Sales App/ })).toBeVisible();
 
   const invalidSubmission = await page.evaluate(async () => {
-    const response = await fetch("/api/v1/orders", {
+    const gatewayBase = `${window.location.protocol}//${window.location.hostname}:8081`;
+    const response = await fetch(`${gatewayBase}/api/v1/orders`, {
       method: "POST",
+      credentials: "include",
       headers: { "content-type": "application/json", accept: "application/json" },
       body: JSON.stringify({
         clientId: "",

@@ -19,16 +19,16 @@ class WebCorsConfig(
             .filter { it.isNotBlank() }
 
         val config = CorsConfiguration().apply {
-            allowCredentials = false
+            allowCredentials = true
             this.allowedOrigins = allowedOrigins
-            allowedHeaders = listOf("Authorization", "Content-Type", "Idempotency-Key")
+            allowedHeaders = listOf("Authorization", "Content-Type", "Idempotency-Key", "Accept")
             allowedMethods = listOf("GET", "POST", "OPTIONS")
             exposedHeaders = listOf("content-type", "cache-control")
             maxAge = 3_600
         }
 
         val source = UrlBasedCorsConfigurationSource()
-        source.registerCorsConfiguration("/api/v1/warehouse/**", config)
+        source.registerCorsConfiguration("/api/v1/**", config)
 
         return CorsFilter(source)
     }

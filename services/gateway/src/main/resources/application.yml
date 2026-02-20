@@ -15,7 +15,8 @@ gateway:
   oidc-client-id: ${OIDC_CLIENT_ID:dunder-mifflin-gateway}
   oidc-client-secret: ${OIDC_CLIENT_SECRET:gateway-secret-change-me}
   order-service-base-url: ${ORDER_SERVICE_BASE_URL:http://order-service:8093}
-  mobile-web-origins: ${MOBILE_WEB_ORIGINS:http://localhost:3004,http://host.docker.internal:3004}
+  mobile-web-origins: ${MOBILE_WEB_ORIGINS:http://localhost:3001,http://host.docker.internal:3001,http://localhost:3004,http://host.docker.internal:3004}
+  infinity-web-base-url: ${INFINITY_WEB_BASE_URL:http://localhost:3001}
   session-max-age-ms: ${SESSION_MAX_AGE_MS:1800000}
   oidc-state-max-age-ms: ${OIDC_STATE_MAX_AGE_MS:300000}
 
