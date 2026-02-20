@@ -13,23 +13,57 @@ This roadmap breaks work into sequential PRs. Each PR is sized to be reviewable 
 | PR | Frontend in Scope | Backend in Scope | Notes |
 |---|---|---|---|
 | PR1 | `apps/portal` | `services/gateway` | Portal shell + web login/session foundation. |
-| PR2 | `apps/portal`, Sales entry route (Infinity placeholder) | `services/gateway` | Infinity is intentionally placeholder-only in this step. |
-| PR3 | Infinity order UI (currently served by gateway route) | `services/gateway`, `services/order-service` | First real Sales business flow (orders). |
-| PR4 | `apps/warehouse-mobile` (Expo) | `services/gateway`, shipment APIs (implemented through order domain for MVP) | Mobile PKCE + scanner/pick/dispatch MVP. |
-| PR5 | Infinity order timeline UX | `services/gateway` (SSE), order/inventory status event flow | Real-time cross-app status sync. |
+| PR2 | `apps/portal` (Sales entry route only) | `services/gateway` | Infinity remains placeholder-only in this step. |
+| PR3 | Infinity order UI (gateway-hosted route) | `services/gateway`, `services/order-service` | First real Sales order flow. |
+| PR4 | `apps/warehouse-mobile` (Expo) | `services/gateway`, shipment APIs (MVP adapter on order domain) | Mobile PKCE + scanner/pick/dispatch MVP. |
+| PR5 | `apps/infinity` standalone app + order timeline UX | `services/gateway` (SSE), `services/order-service`, `services/inventory-service` integration | Moves Infinity out of gateway-rendered HTML. |
 | PR6 | `apps/accounting` | `services/gateway`, `services/finance-service` | Expense approval workflow. |
 | PR7 | `apps/wuphf-widget` integrated into Portal/Infinity/Accounting | `services/gateway`, `services/wuphf-service` | Unified notification UX. |
-| PR8 | `apps/warehouse-mobile` offline queue/sync UX | Warehouse/order backend idempotent mutation handling | Offline-first safety and replay. |
-| PR9 | Portal/Infinity/Warehouse/Accounting reliability UX | Gateway + all domain services observability/error standards | User-facing reliability + tracing. |
+| PR8 | `apps/warehouse-mobile` offline queue/sync UX | `services/inventory-service` warehouse ownership + idempotent mutation handling | Offline-first safety and replay. |
+| PR9 | Portal/Infinity/Warehouse/Accounting reliability UX | Gateway + all in-scope domain services observability/error standards | User-facing reliability + tracing. |
 | PR10 | `tests/e2e` golden-path suite | Full app/backend stack in CI | Merge gate for end-to-end quality. |
+
+## Component First-Delivery Matrix
+
+| Component | Type | First PR | Notes |
+|---|---|---|---|
+| `apps/portal` | Frontend app | PR1 | Platform shell and app launcher. |
+| `apps/infinity` | Frontend app | PR5 | PR3 delivers Infinity UX via gateway route; PR5 extracts to standalone app. |
+| `apps/warehouse-mobile` | Frontend app | PR4 | Expo mobile/web MVP for warehouse operators. |
+| `apps/accounting` | Frontend app | PR6 | Accounting queue and decisions. |
+| `apps/wuphf-widget` | Frontend app/widget | PR7 | Shared widget embedded in host apps. |
+| `services/gateway` | Backend service | PR1 | Auth/session entrypoint, routing, and aggregation. |
+| `services/order-service` | Backend service | PR3 | Order create/list + early shipment adapter. |
+| `services/finance-service` | Backend service | PR6 | Expense review workflow. |
+| `services/wuphf-service` | Backend service | PR7 | Notifications API/events. |
+| `services/inventory-service` | Backend service | PR8 | Becomes primary warehouse shipment owner. |
+| `services/sales-service` | Backend service | PR11 (proposed) | Lead/client domain not in PR1-PR10 committed scope yet. |
+| `services/profile-service` | Backend service | PR12 (proposed) | User profile/preferences domain not in PR1-PR10 committed scope yet. |
+| `tests/e2e` | Quality gate | PR2 | Starts in PR2 and expands through PR10. |
+
+## Current E2E Coverage by PR
+
+| PR | Current or Planned E2E Coverage |
+|---|---|
+| PR2 | `tests/e2e/specs/auth-sales-navigation.spec.ts` |
+| PR3 | `tests/e2e/specs/sales-order-placement.spec.ts` |
+| PR4 | `tests/e2e/specs/warehouse-dispatch.spec.ts` |
+| PR5 | Planned: Infinity standalone + timeline spec (`sales-order-timeline.spec.ts` or equivalent) |
+| PR6 | Planned: accounting approval flow spec |
+| PR7 | Planned: notification widget cross-app behavior spec |
+| PR8 | Planned: offline replay/idempotency spec |
+| PR9 | Planned: reliability/error-state regression spec |
+| PR10 | Aggregated golden-path CI gate over all required specs |
 
 ## PR 1: Platform Login + App Navigation Shell
 **User-visible outcome:** Users can sign in and navigate from one central portal to each department app.
 
 **Included Components**
-- Frontend: `apps/portal`
-- Backend: `services/gateway` (auth/session/bootstrap endpoints)
+- Frontend apps: `apps/portal`
+- Backend services: `services/gateway` (auth/session/bootstrap endpoints)
 - Infra/Auth dependencies: Keycloak + LDAP seed + gateway web session flow
+- Non-goals: no Sales/Warehouse/Accounting business workflows yet
+- E2E coverage: established in PR2
 
 **Scope**
 - Build Scranton Portal shell with header, app switcher, and role-aware nav.
@@ -45,9 +79,11 @@ This roadmap breaks work into sequential PRs. Each PR is sized to be reviewable 
 **User-visible outcome:** Sales users can reach the Sales app through the gateway login flow.
 
 **Included Components**
-- Frontend: `apps/portal` navigation + Infinity destination route as placeholder
-- Backend: `services/gateway` (route protection, redirects, role checks)
-- Explicit non-goal: no real Infinity business UI yet
+- Frontend apps: `apps/portal` navigation + Infinity destination route as placeholder
+- Backend services: `services/gateway` (route protection, redirects, role checks)
+- Infra/Auth dependencies: Keycloak OIDC realm/client config
+- Non-goals: no real Infinity business UI yet
+- E2E coverage: `tests/e2e/specs/auth-sales-navigation.spec.ts`
 
 **Scope**
 - Add Sales app entry point/routing from portal through gateway.
@@ -64,9 +100,11 @@ This roadmap breaks work into sequential PRs. Each PR is sized to be reviewable 
 **User-visible outcome:** Sales users can place paper orders from Infinity.
 
 **Included Components**
-- Frontend: Infinity order form/history UX (currently delivered via gateway-hosted Infinity page)
-- Backend: `services/gateway` (`/api/v1/orders*` routing/authz), `services/order-service` (persistence + order events)
+- Frontend apps: Infinity order form/history UX delivered via gateway-hosted `/infinity` page
+- Backend services: `services/gateway` (`/api/v1/orders*` routing/authz), `services/order-service` (persistence + order events)
 - Infra dependencies: PostgreSQL + RabbitMQ
+- Non-goals: standalone `apps/infinity` web app package
+- E2E coverage: `tests/e2e/specs/sales-order-placement.spec.ts`
 
 **Scope**
 - Add order creation UI in Infinity.
@@ -82,10 +120,11 @@ This roadmap breaks work into sequential PRs. Each PR is sized to be reviewable 
 **User-visible outcome:** Warehouse users can scan items and process pending shipments from mobile.
 
 **Included Components**
-- Frontend: `apps/warehouse-mobile` (Expo)
-- Backend: `services/gateway` warehouse routes + shipment mutation/read APIs
-- Auth: direct Keycloak Authorization Code + PKCE for mobile client (`warehouse-mobile`)
-- MVP implementation note: shipment workflow may be backed by order-domain adapters until dedicated inventory implementation is expanded
+- Frontend apps: `apps/warehouse-mobile` (Expo)
+- Backend services: `services/gateway` warehouse routes + shipment mutation/read APIs (MVP adapter using order domain)
+- Infra/Auth dependencies: Keycloak mobile client (`warehouse-mobile`) + PKCE
+- Non-goals: dedicated `inventory-service` ownership of warehouse endpoints
+- E2E coverage: `tests/e2e/specs/warehouse-dispatch.spec.ts`
 
 **Scope**
 - Bootstrap Expo app and auth flow.
@@ -98,29 +137,36 @@ This roadmap breaks work into sequential PRs. Each PR is sized to be reviewable 
 - Barcode scan populates shipment line item.
 - Dispatch action updates shipment status visible to Sales.
 
-## PR 5: Live Cross-App Order Status Sync
-**User-visible outcome:** Sales sees real-time warehouse progress on each order.
+## PR 5: Infinity Standalone App + Live Cross-App Order Status Sync
+**User-visible outcome:** Sales uses a real Infinity web app and sees real-time warehouse progress on each order.
 
 **Included Components**
-- Frontend: Infinity order timeline/status UX
-- Backend: gateway SSE stream support + order/inventory status transitions and event propagation
+- Frontend apps: `apps/infinity` (standalone app) with order timeline/status UX
+- Backend services: `services/gateway` (SSE stream support and authz), `services/order-service`, `services/inventory-service` event integration
+- Infra dependencies: RabbitMQ event flow + compose wiring for Infinity web container
+- Non-goals: Sales CRM lead pipeline (`services/sales-service`) in this PR
+- E2E coverage: planned new spec for timeline/live updates
 
 **Scope**
-- Add status timeline to Infinity order details.
-- Consume backend status transitions (`RESERVED`, `SHIPPED`, `FAILED_INSUFFICIENT_STOCK`).
-- Add event-driven client updates (SSE through gateway).
+- Extract current gateway-rendered Infinity UI into `apps/infinity`.
+- Serve Infinity via dedicated app container while keeping gateway as auth/API edge.
+- Add order status timeline/details view in Infinity.
+- Consume backend status transitions (`RESERVED`, `SHIPPED`, `FAILED_INSUFFICIENT_STOCK`) via SSE.
 
 **Acceptance**
-- Shipment status change in warehouse reflects in sales within **15 seconds** end-to-end.
-- Timeline persists and reloads correctly.
-- Failed/insufficient stock statuses are visible and actionable.
+- `/infinity` no longer depends on embedded HTML in gateway controller.
+- Shipment status changes are reflected in Infinity within **15 seconds** end-to-end.
+- Timeline state persists and reloads correctly.
 
 ## PR 6: Accounting Suite MVP - Expense Approval
 **User-visible outcome:** Accounting users can review and approve/reject expenses.
 
 **Included Components**
-- Frontend: `apps/accounting`
-- Backend: `services/gateway` expense routes + `services/finance-service` decision workflow
+- Frontend apps: `apps/accounting`
+- Backend services: `services/gateway` expense routes + `services/finance-service` decision workflow
+- Infra dependencies: PostgreSQL + RabbitMQ as required by finance workflows
+- Non-goals: cross-app notification center behavior
+- E2E coverage: planned accounting flow spec
 
 **Scope**
 - Build Angular expense queue and detail views.
@@ -136,8 +182,11 @@ This roadmap breaks work into sequential PRs. Each PR is sized to be reviewable 
 **User-visible outcome:** Users receive unified in-app notifications for key workflows.
 
 **Included Components**
-- Frontend: `apps/wuphf-widget` + integration in portal/infinity/accounting hosts
-- Backend: `services/wuphf-service` + gateway notification APIs
+- Frontend apps: `apps/wuphf-widget` + integration in Portal/Infinity/Accounting hosts
+- Backend services: `services/gateway` notification routes + `services/wuphf-service`
+- Infra dependencies: notification/event delivery path through message broker
+- Non-goals: warehouse offline synchronization rules
+- E2E coverage: planned widget integration spec
 
 **Scope**
 - Implement embeddable Web Component notification center.
@@ -149,17 +198,21 @@ This roadmap breaks work into sequential PRs. Each PR is sized to be reviewable 
 - Notification click deep-links to the correct page.
 - Unread/read state is persisted per user.
 
-## PR 8: Warehouse Offline-First Sync
+## PR 8: Warehouse Offline-First Sync + Inventory Service Handoff
 **User-visible outcome:** Warehouse app remains usable during network drops and syncs safely when online.
 
 **Included Components**
-- Frontend: `apps/warehouse-mobile` offline queue/retry UX
-- Backend: idempotency and dedupe handling across warehouse/order mutation paths
+- Frontend apps: `apps/warehouse-mobile` offline queue/retry UX
+- Backend services: `services/inventory-service` primary shipment API ownership + idempotency/dedupe handling across mutation paths
+- Infra dependencies: durable queue/event transport for safe replay
+- Non-goals: accounting-specific workflow expansion
+- E2E coverage: planned offline replay/idempotency spec
 
 **Scope**
 - Add offline queue for warehouse mutations.
 - Add sync status indicators and retry handling.
-- Add idempotency keys for retry deduplication protection.
+- Add idempotency keys for retry dedupe.
+- Shift warehouse endpoint ownership from order-domain adapter to inventory-domain implementation.
 
 **Acceptance**
 - Warehouse user can perform shipment actions offline.
@@ -170,8 +223,11 @@ This roadmap breaks work into sequential PRs. Each PR is sized to be reviewable 
 **User-visible outcome:** Better transparency and fewer silent failures for users.
 
 **Included Components**
-- Frontend: portal/infinity/warehouse/accounting error boundaries and trace propagation
-- Backend: gateway + domain services tracing, metrics, alerting contracts
+- Frontend apps: Portal/Infinity/Warehouse/Accounting error boundaries and trace propagation
+- Backend services: gateway + all in-scope domain services tracing, metrics, alerting contracts
+- Infra dependencies: metrics/tracing/alerting stack used by all active services
+- Non-goals: new line-of-business features
+- E2E coverage: planned reliability/error-state regression spec
 
 **Scope**
 - Add consistent frontend error boundaries and friendly failure states.
@@ -189,13 +245,14 @@ This roadmap breaks work into sequential PRs. Each PR is sized to be reviewable 
 **Included Components**
 - Frontend tests: `tests/e2e/specs/*` golden-path flows
 - Backend/system scope: full docker-compose stack exercised in CI gate
+- Infra dependencies: CI environment with compose profiles for infra + apps + services
+- Non-goals: adding new product functionality
+- E2E coverage: aggregate gate over PR2-PR9 required specs
 
 **Scope**
-- Implement Playwright flows for:
-- Sales lead-to-order
-- Warehouse dispatch
-- Accounting expense approval
+- Implement and stabilize Playwright flows for Sales, Warehouse, Accounting, and notification cross-app behaviors.
 - Add CI gate that blocks merge on failing golden paths.
+- Track and reduce flaky tests.
 
 **Acceptance**
 - E2E suite runs in CI against `docker-compose.yml`.
@@ -203,7 +260,9 @@ This roadmap breaks work into sequential PRs. Each PR is sized to be reviewable 
 - Flaky tests are tracked and kept below agreed threshold.
 
 ## Optional Follow-On PRs (after MVP)
-- PR 11: Commission calculator and sales analytics widgets.
-- PR 12: Warehouse safety checklist + baler lock workflow.
-- PR 13: PPC calendar + conference room booking in portal.
-- PR 14: Role delegation/admin tools in profile service UI.
+- PR 11: Sales CRM foundation in `apps/infinity` + `services/sales-service` (leads and client conversion).
+- PR 12: User profile/preferences in Portal + `services/profile-service`.
+- PR 13: Commission calculator and sales analytics widgets.
+- PR 14: Warehouse safety checklist + baler lock workflow.
+- PR 15: PPC calendar + conference room booking in portal.
+- PR 16: Role delegation/admin tools in profile service UI.
