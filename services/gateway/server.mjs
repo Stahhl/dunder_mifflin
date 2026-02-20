@@ -246,19 +246,331 @@ function renderHomePage(session) {
 
 function renderInfinityPage(session) {
   const roles = (session.roles ?? []).join(", ");
+  const defaultShipDate = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
   return `
 <!doctype html>
 <html lang="en">
   <head>
     <meta charset="utf-8" />
     <title>Infinity Sales App</title>
+    <style>
+      :root {
+        color-scheme: light;
+        font-family: "Trebuchet MS", "Segoe UI", sans-serif;
+      }
+      body {
+        margin: 0;
+        background: #f4f1ea;
+        color: #1f2b33;
+      }
+      .wrap {
+        max-width: 980px;
+        margin: 2rem auto;
+        padding: 0 1rem 2rem;
+      }
+      .panel {
+        background: #fff;
+        border: 1px solid #d3cec4;
+        border-radius: 10px;
+        box-shadow: 0 2px 6px rgba(31, 43, 51, 0.08);
+        padding: 1rem;
+        margin-bottom: 1rem;
+      }
+      .row {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+        gap: 0.75rem;
+      }
+      label {
+        display: block;
+        font-weight: 600;
+        margin-bottom: 0.35rem;
+      }
+      input,
+      textarea,
+      button {
+        width: 100%;
+        box-sizing: border-box;
+        border: 1px solid #b9b2a6;
+        border-radius: 6px;
+        padding: 0.55rem 0.65rem;
+        font: inherit;
+      }
+      textarea {
+        min-height: 80px;
+        resize: vertical;
+      }
+      button {
+        cursor: pointer;
+        background: #004a8f;
+        color: #fff;
+        font-weight: 700;
+      }
+      button:hover {
+        background: #003a70;
+      }
+      .alert {
+        margin-top: 0.75rem;
+        padding: 0.65rem 0.75rem;
+        border-radius: 6px;
+      }
+      .alert-error {
+        background: #fde8e8;
+        border: 1px solid #f4b8b8;
+        color: #8e1919;
+      }
+      .alert-success {
+        background: #e8f6ec;
+        border: 1px solid #b9e2c5;
+        color: #1f6c3d;
+      }
+      .hidden {
+        display: none;
+      }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+      }
+      th,
+      td {
+        text-align: left;
+        border-bottom: 1px solid #e2ddd3;
+        padding: 0.5rem;
+      }
+      th {
+        background: #f7f5f0;
+      }
+      .meta {
+        color: #57534e;
+        margin-top: 0.35rem;
+      }
+      .inline-link {
+        color: #004a8f;
+      }
+    </style>
   </head>
   <body>
-    <h1>Infinity Sales App (PR2)</h1>
-    <p>Welcome, <strong>${escapeHtml(session.displayName)}</strong>.</p>
-    <p>Roles: ${escapeHtml(roles)}</p>
-    <p>This PR2 page confirms gateway auth navigation only. Sales workflows land in later PRs.</p>
-    <p><a href="/">Back to gateway home</a></p>
+    <div class="wrap">
+      <h1>Infinity Sales App (PR3)</h1>
+      <p>Welcome, <strong>${escapeHtml(session.displayName)}</strong>. Roles: ${escapeHtml(roles)}</p>
+
+      <section class="panel">
+        <h2>Place Paper Order</h2>
+        <form id="order-form" novalidate>
+          <div class="row">
+            <div>
+              <label for="clientId">Client ID</label>
+              <input id="clientId" name="clientId" value="client_501" required />
+            </div>
+            <div>
+              <label for="requestedShipDate">Requested ship date</label>
+              <input id="requestedShipDate" name="requestedShipDate" type="date" value="${defaultShipDate}" required />
+            </div>
+          </div>
+
+          <div class="row" style="margin-top:0.75rem;">
+            <div>
+              <label for="sku">Product SKU</label>
+              <input id="sku" name="sku" value="PPR-A4-WHT-500" required />
+            </div>
+            <div>
+              <label for="quantity">Quantity</label>
+              <input id="quantity" name="quantity" type="number" min="1" step="1" value="10" required />
+            </div>
+          </div>
+
+          <div style="margin-top:0.75rem;">
+            <label for="notes">Notes</label>
+            <textarea id="notes" name="notes" placeholder="Loading dock closes at 5 PM"></textarea>
+          </div>
+
+          <div style="margin-top:0.75rem;">
+            <button type="submit" id="place-order-btn">Place Order</button>
+          </div>
+          <div id="form-error" class="alert alert-error hidden" role="alert"></div>
+          <div id="order-success" class="alert alert-success hidden"></div>
+        </form>
+      </section>
+
+      <section class="panel">
+        <h2>Order History</h2>
+        <div class="row">
+          <div>
+            <label for="history-client-id">Filter by client ID</label>
+            <input id="history-client-id" name="history-client-id" placeholder="client_501" />
+          </div>
+          <div style="align-self:end;">
+            <button id="refresh-history-btn" type="button">Refresh History</button>
+          </div>
+        </div>
+        <p class="meta" id="history-meta">Loading...</p>
+        <table>
+          <thead>
+            <tr>
+              <th>Order ID</th>
+              <th>Client</th>
+              <th>Status</th>
+              <th>Requested Ship Date</th>
+              <th>Created At (UTC)</th>
+            </tr>
+          </thead>
+          <tbody id="history-body"></tbody>
+        </table>
+      </section>
+
+      <p><a class="inline-link" href="/">Back to gateway home</a></p>
+    </div>
+
+    <script>
+      const formElement = document.getElementById("order-form");
+      const clientIdElement = document.getElementById("clientId");
+      const shipDateElement = document.getElementById("requestedShipDate");
+      const skuElement = document.getElementById("sku");
+      const quantityElement = document.getElementById("quantity");
+      const notesElement = document.getElementById("notes");
+      const errorElement = document.getElementById("form-error");
+      const successElement = document.getElementById("order-success");
+      const historyFilterElement = document.getElementById("history-client-id");
+      const historyMetaElement = document.getElementById("history-meta");
+      const historyBodyElement = document.getElementById("history-body");
+      const refreshHistoryButton = document.getElementById("refresh-history-btn");
+      const submitButton = document.getElementById("place-order-btn");
+
+      function showError(messages) {
+        const html = "<strong>Fix these fields:</strong><ul>" + messages.map((message) => "<li>" + escapeHtml(message) + "</li>").join("") + "</ul>";
+        errorElement.innerHTML = html;
+        errorElement.classList.remove("hidden");
+      }
+
+      function hideError() {
+        errorElement.innerHTML = "";
+        errorElement.classList.add("hidden");
+      }
+
+      function showSuccess(message) {
+        successElement.textContent = message;
+        successElement.classList.remove("hidden");
+      }
+
+      function hideSuccess() {
+        successElement.textContent = "";
+        successElement.classList.add("hidden");
+      }
+
+      function escapeHtml(value) {
+        return String(value)
+          .replaceAll("&", "&amp;")
+          .replaceAll("<", "&lt;")
+          .replaceAll(">", "&gt;")
+          .replaceAll('"', "&quot;")
+          .replaceAll("'", "&#39;");
+      }
+
+      function validateForm() {
+        const errors = [];
+        const clientId = clientIdElement.value.trim();
+        const sku = skuElement.value.trim();
+        const shipDate = shipDateElement.value.trim();
+        const quantity = Number.parseInt(quantityElement.value, 10);
+
+        if (!clientId) {
+          errors.push("Client ID is required");
+        }
+        if (!sku) {
+          errors.push("Product SKU is required");
+        }
+        if (!shipDate) {
+          errors.push("Requested ship date is required");
+        }
+        if (!Number.isInteger(quantity) || quantity <= 0) {
+          errors.push("Quantity must be a whole number greater than 0");
+        }
+
+        return { errors, clientId, sku, shipDate, quantity };
+      }
+
+      async function loadHistory(clientId = historyFilterElement.value.trim()) {
+        const query = clientId ? "?clientId=" + encodeURIComponent(clientId) : "";
+        const response = await fetch("/api/v1/orders" + query, { headers: { accept: "application/json" } });
+        const payload = await response.json();
+
+        if (!response.ok) {
+          throw new Error(payload?.error?.message ?? "Unable to load order history");
+        }
+
+        historyBodyElement.innerHTML = "";
+        for (const item of payload.items ?? []) {
+          const row = document.createElement("tr");
+          row.innerHTML = [
+            "<td>" + escapeHtml(item.orderId) + "</td>",
+            "<td>" + escapeHtml(item.clientId) + "</td>",
+            "<td>" + escapeHtml(item.status) + "</td>",
+            "<td>" + escapeHtml(item.requestedShipDate) + "</td>",
+            "<td>" + escapeHtml(item.createdAt) + "</td>"
+          ].join("");
+          historyBodyElement.appendChild(row);
+        }
+
+        historyMetaElement.textContent = "Showing " + (payload.total ?? 0) + " order(s)" + (clientId ? " for " + clientId : "");
+      }
+
+      formElement.addEventListener("submit", async (event) => {
+        event.preventDefault();
+        hideError();
+        hideSuccess();
+
+        const { errors, clientId, sku, shipDate, quantity } = validateForm();
+        if (errors.length > 0) {
+          showError(errors);
+          return;
+        }
+
+        submitButton.disabled = true;
+        submitButton.textContent = "Placing...";
+        try {
+          const response = await fetch("/api/v1/orders", {
+            method: "POST",
+            headers: { "content-type": "application/json", accept: "application/json" },
+            body: JSON.stringify({
+              clientId,
+              requestedShipDate: shipDate,
+              items: [{ sku, quantity }],
+              notes: notesElement.value
+            })
+          });
+
+          const payload = await response.json();
+          if (!response.ok) {
+            const details = payload?.error?.details?.map((detail) => detail.field + ": " + detail.issue) ?? [];
+            showError([payload?.error?.message ?? "Order submission failed", ...details]);
+            return;
+          }
+
+          showSuccess("Order " + payload.orderId + " created with status " + payload.status + ".");
+          historyFilterElement.value = clientId;
+          await loadHistory(clientId);
+        } catch (errorObject) {
+          showError([errorObject instanceof Error ? errorObject.message : "Unexpected request failure"]);
+        } finally {
+          submitButton.disabled = false;
+          submitButton.textContent = "Place Order";
+        }
+      });
+
+      refreshHistoryButton.addEventListener("click", async () => {
+        hideError();
+        hideSuccess();
+        try {
+          await loadHistory();
+        } catch (errorObject) {
+          showError([errorObject instanceof Error ? errorObject.message : "Unexpected history failure"]);
+        }
+      });
+
+      loadHistory().catch((errorObject) => {
+        showError([errorObject instanceof Error ? errorObject.message : "Unable to load history"]);
+      });
+    </script>
   </body>
 </html>`;
 }

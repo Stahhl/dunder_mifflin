@@ -10,6 +10,6 @@ test("sales app route redirects to Keycloak and returns after login", async ({ p
   await page.locator("#kc-login").click();
 
   await expect(page).toHaveURL(/\/infinity$/);
-  await expect(page.getByRole("heading", { name: "Infinity Sales App (PR2)" })).toBeVisible();
-  await expect(page.getByText("This PR2 page confirms gateway auth navigation only.")).toBeVisible();
+  await expect(page.getByRole("heading", { name: /Infinity Sales App/ })).toBeVisible();
+  await expect(page.getByText("Place Paper Order")).toBeVisible();
 });

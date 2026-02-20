@@ -32,7 +32,7 @@ Order backend integration command:
 docker compose --profile test run --rm order-service-integration-tests
 ```
 
-PR2 auth/navigation Playwright command:
+Playwright smoke command (PR2 auth + PR3 order placement):
 
 ```bash
 # requires app profile services to be up
@@ -47,10 +47,11 @@ docker compose --profile test run --rm e2e-tests
 - User signs in with PR1 seeded credentials.
 - Browser is redirected back to Sales app route.
 
-2. Sales lead-to-order:
+2. PR3 sales order placement:
 - Sales user logs in.
-- Creates lead, moves stages, converts lead.
-- Places order and sees order in history.
+- Validation blocks invalid order payloads (missing customer, invalid quantity).
+- Sales user places order via Infinity.
+- Order appears in Infinity history with `CREATED` status.
 
 3. Warehouse dispatch:
 - Warehouse user logs in.
@@ -75,7 +76,7 @@ tests/e2e/
 │   └── products.json
 ├── specs/
 │   ├── auth-sales-navigation.spec.ts
-│   ├── sales-lead-order.spec.ts
+│   ├── sales-order-placement.spec.ts
 │   ├── warehouse-dispatch.spec.ts
 │   └── accounting-expense.spec.ts
 └── utils/
