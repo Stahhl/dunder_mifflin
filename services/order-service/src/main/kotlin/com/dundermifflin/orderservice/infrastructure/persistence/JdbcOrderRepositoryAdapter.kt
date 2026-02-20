@@ -1,11 +1,13 @@
 package com.dundermifflin.orderservice.infrastructure.persistence
 
 import com.dundermifflin.orderservice.domain.model.CreateOrderCommand
+import com.dundermifflin.orderservice.domain.model.DispatchShipmentResult
 import com.dundermifflin.orderservice.domain.model.Order
 import com.dundermifflin.orderservice.domain.model.OrderItem
 import com.dundermifflin.orderservice.domain.model.OrderStatus
 import com.dundermifflin.orderservice.domain.model.OrderSummary
 import com.dundermifflin.orderservice.domain.model.OrderTimelineEvent
+import com.dundermifflin.orderservice.domain.model.ShipmentWorkItem
 import com.dundermifflin.orderservice.domain.port.output.OrderRepositoryPort
 import com.fasterxml.jackson.databind.ObjectMapper
 import org.springframework.jdbc.core.JdbcTemplate
@@ -143,6 +145,96 @@ class JdbcOrderRepositoryAdapter(
         )
     }
 
+    override fun listPendingShipments(): List<ShipmentWorkItem> {
+        return jdbcTemplate.query(
+            """
+            SELECT
+              order_id,
+              client_id,
+              status,
+              requested_ship_date,
+              items,
+              created_at
+            FROM orders.orders
+            WHERE status IN ('CREATED', 'RESERVED', 'PICKING')
+            ORDER BY created_at ASC
+            """.trimIndent(),
+            shipmentRowMapper
+        )
+    }
+
+    override fun getShipmentById(shipmentId: String): ShipmentWorkItem? {
+        val orderId = shipmentIdToOrderId(shipmentId) ?: return null
+
+        val rows = jdbcTemplate.query(
+            """
+            SELECT
+              order_id,
+              client_id,
+              status,
+              requested_ship_date,
+              items,
+              created_at
+            FROM orders.orders
+            WHERE order_id = ?
+            """.trimIndent(),
+            shipmentRowMapper,
+            orderId
+        )
+
+        return rows.firstOrNull()
+    }
+
+    @Transactional
+    override fun markShipmentDispatched(shipmentId: String, dispatchedAt: Instant): DispatchShipmentResult? {
+        val orderId = shipmentIdToOrderId(shipmentId) ?: return null
+        val order = getOrderById(orderId) ?: return null
+
+        if (order.status == OrderStatus.SHIPPED) {
+            return DispatchShipmentResult(
+                shipmentId = shipmentId,
+                orderId = orderId,
+                shipmentStatus = "DISPATCHED",
+                orderStatus = OrderStatus.SHIPPED.name,
+                dispatchedAt = dispatchedAt
+            )
+        }
+
+        val updatedRows = jdbcTemplate.update(
+            """
+            UPDATE orders.orders
+            SET status = ?, shipment_id = ?
+            WHERE order_id = ?
+            """.trimIndent(),
+            OrderStatus.SHIPPED.name,
+            shipmentId,
+            orderId
+        )
+
+        if (updatedRows == 0) {
+            return null
+        }
+
+        jdbcTemplate.update(
+            """
+            INSERT INTO orders.order_timeline (order_id, status, at, source)
+            VALUES (?, ?, ?, ?)
+            """.trimIndent(),
+            orderId,
+            OrderStatus.SHIPPED.name,
+            Timestamp.from(dispatchedAt),
+            "inventory-service"
+        )
+
+        return DispatchShipmentResult(
+            shipmentId = shipmentId,
+            orderId = orderId,
+            shipmentStatus = "DISPATCHED",
+            orderStatus = OrderStatus.SHIPPED.name,
+            dispatchedAt = dispatchedAt
+        )
+    }
+
     override fun isHealthy(): Boolean = try {
         jdbcTemplate.queryForObject("SELECT 1", Int::class.java)
         true
@@ -182,6 +274,19 @@ class JdbcOrderRepositoryAdapter(
         )
     }
 
+    private val shipmentRowMapper = RowMapper { rs: ResultSet, _: Int ->
+        val orderId = rs.getString("order_id")
+        ShipmentWorkItem(
+            shipmentId = orderIdToShipmentId(orderId),
+            orderId = orderId,
+            clientId = rs.getString("client_id"),
+            status = statusToShipmentStatus(rs.getString("status")),
+            requestedShipDate = rs.getDate("requested_ship_date").toLocalDate(),
+            items = parseItems(rs.getString("items")),
+            createdAt = rs.getTimestamp("created_at").toInstant()
+        )
+    }
+
     private fun parseItems(value: String?): List<OrderItem> {
         if (value.isNullOrBlank()) {
             return emptyList()
@@ -204,6 +309,30 @@ class JdbcOrderRepositoryAdapter(
             }
         } catch (_: Exception) {
             emptyList()
+        }
+    }
+
+    private fun orderIdToShipmentId(orderId: String): String {
+        return if (orderId.startsWith("ord_")) "ship_${orderId.removePrefix("ord_")}" else "ship_$orderId"
+    }
+
+    private fun shipmentIdToOrderId(shipmentId: String): String? {
+        if (!shipmentId.startsWith("ship_")) {
+            return null
+        }
+        val suffix = shipmentId.removePrefix("ship_")
+        if (suffix.isBlank()) {
+            return null
+        }
+        return "ord_$suffix"
+    }
+
+    private fun statusToShipmentStatus(orderStatus: String): String {
+        return when (orderStatus) {
+            OrderStatus.CREATED.name, OrderStatus.RESERVED.name -> "PENDING"
+            OrderStatus.PICKING.name -> "LOADING"
+            OrderStatus.SHIPPED.name -> "DISPATCHED"
+            else -> "FAILED"
         }
     }
 }

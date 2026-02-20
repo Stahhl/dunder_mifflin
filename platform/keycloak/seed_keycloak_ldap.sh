@@ -16,6 +16,14 @@ if [ -n "$GATEWAY_CLIENT_ID" ]; then
     -s 'webOrigins=["http://localhost:8081","http://host.docker.internal:8081","http://localhost:5173"]'
 fi
 
+WAREHOUSE_CLIENT_ID=$($KCADM get clients -r "$REALM" -q clientId=warehouse-mobile | sed -n 's/.*"id" : "\([^"]*\)".*/\1/p' | head -n1)
+if [ -n "$WAREHOUSE_CLIENT_ID" ]; then
+  $KCADM update "clients/$WAREHOUSE_CLIENT_ID" -r "$REALM" \
+    -s 'redirectUris=["exp://*","dundermifflin://*","http://localhost:3004/*","http://host.docker.internal:3004/*"]' \
+    -s 'webOrigins=["http://localhost:3004","http://host.docker.internal:3004"]' \
+    -s 'attributes."pkce.code.challenge.method"=S256'
+fi
+
 for provider_name in dunder-ldap temp-ldap; do
   for id in $($KCADM get components -r "$REALM" -q name="$provider_name" | sed -n 's/.*"id" : "\([^"]*\)".*/\1/p'); do
     $KCADM delete "components/$id" -r "$REALM"

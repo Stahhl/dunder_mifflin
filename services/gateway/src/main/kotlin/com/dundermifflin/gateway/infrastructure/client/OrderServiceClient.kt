@@ -18,12 +18,22 @@ class OrderServiceClient(
         .connectTimeout(Duration.ofSeconds(5))
         .build()
 
-    fun forward(pathAndQuery: String, method: String, userId: String, body: String? = null): ResponseEntity<String> {
+    fun forward(
+        pathAndQuery: String,
+        method: String,
+        userId: String,
+        body: String? = null,
+        additionalHeaders: Map<String, String> = emptyMap()
+    ): ResponseEntity<String> {
         val requestBuilder = HttpRequest.newBuilder()
             .uri(URI.create("${gatewayProperties.orderServiceBaseUrl}$pathAndQuery"))
             .timeout(Duration.ofSeconds(15))
             .header("content-type", "application/json")
             .header("x-user-id", userId)
+
+        additionalHeaders.forEach { (name, value) ->
+            requestBuilder.header(name, value)
+        }
 
         val request = when (method) {
             "GET" -> requestBuilder.GET().build()

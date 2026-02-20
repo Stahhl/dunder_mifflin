@@ -8,7 +8,8 @@
     "test:portal": "pnpm --filter @dunder/portal test",
     "test:e2e:pr2": "playwright test --config tests/e2e/config/playwright.config.ts tests/e2e/specs/auth-sales-navigation.spec.ts",
     "test:e2e:pr3": "playwright test --config tests/e2e/config/playwright.config.ts tests/e2e/specs/sales-order-placement.spec.ts",
-    "test:e2e:smoke": "playwright test --config tests/e2e/config/playwright.config.ts tests/e2e/specs/auth-sales-navigation.spec.ts tests/e2e/specs/sales-order-placement.spec.ts"
+    "test:e2e:pr4": "playwright test --config tests/e2e/config/playwright.config.ts tests/e2e/specs/warehouse-dispatch.spec.ts",
+    "test:e2e:smoke": "playwright test --config tests/e2e/config/playwright.config.ts tests/e2e/specs/auth-sales-navigation.spec.ts tests/e2e/specs/sales-order-placement.spec.ts tests/e2e/specs/warehouse-dispatch.spec.ts"
   },
   "devDependencies": {
     "@playwright/test": "1.51.1"

@@ -10,6 +10,7 @@ data class GatewayProperties(
     val oidcClientId: String = "dunder-mifflin-gateway",
     val oidcClientSecret: String = "gateway-secret-change-me",
     val orderServiceBaseUrl: String = "http://order-service:8093",
+    val mobileWebOrigins: String = "http://localhost:3004,http://host.docker.internal:3004",
     val sessionMaxAgeMs: Long = 1_800_000,
     val oidcStateMaxAgeMs: Long = 300_000
 )

@@ -4,7 +4,12 @@ import java.time.Instant
 import java.time.LocalDate
 
 enum class OrderStatus {
-    CREATED
+    CREATED,
+    RESERVED,
+    PICKING,
+    SHIPPED,
+    FAILED_INSUFFICIENT_STOCK,
+    CANCELLED
 }
 
 data class OrderItem(
@@ -44,4 +49,37 @@ data class CreateOrderCommand(
     val items: List<OrderItem>,
     val notes: String,
     val createdBy: String
+)
+
+data class ShipmentWorkItem(
+    val shipmentId: String,
+    val orderId: String,
+    val clientId: String,
+    val status: String,
+    val requestedShipDate: LocalDate,
+    val items: List<OrderItem>,
+    val createdAt: Instant
+)
+
+data class ScanShipmentCommand(
+    val shipmentId: String,
+    val barcode: String,
+    val quantity: Int,
+    val scannedBy: String
+)
+
+data class DispatchShipmentCommand(
+    val shipmentId: String,
+    val truckId: String,
+    val dispatchedAt: Instant,
+    val dispatchedBy: String,
+    val idempotencyKey: String
+)
+
+data class DispatchShipmentResult(
+    val shipmentId: String,
+    val orderId: String,
+    val shipmentStatus: String,
+    val orderStatus: String,
+    val dispatchedAt: Instant
 )

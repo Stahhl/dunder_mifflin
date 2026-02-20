@@ -15,6 +15,7 @@ import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
+import org.springframework.web.bind.annotation.RequestHeader
 import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RestController
 import java.net.URLEncoder
@@ -175,6 +176,49 @@ class GatewayController(
         )
     }
 
+    @GetMapping("/api/v1/warehouse/shipments", produces = [MediaType.APPLICATION_JSON_VALUE])
+    fun listShipments(
+        request: HttpServletRequest,
+        @RequestParam(name = "status", required = false) status: String?
+    ): ResponseEntity<Any> {
+        val principal = requireWarehousePrincipal(request) ?: return mobileUnauthOrForbidden(request)
+        val query = status?.takeIf { it.isNotBlank() }?.let { "?status=${encodePath(it)}" } ?: ""
+        return forwardJsonResponse("/internal/shipments$query", "GET", principal.userId)
+    }
+
+    @PostMapping("/api/v1/warehouse/shipments/{shipmentId}/scan", produces = [MediaType.APPLICATION_JSON_VALUE])
+    fun scanShipment(
+        request: HttpServletRequest,
+        @PathVariable shipmentId: String,
+        @RequestBody(required = false) body: String?
+    ): ResponseEntity<Any> {
+        val principal = requireWarehousePrincipal(request) ?: return mobileUnauthOrForbidden(request)
+        return forwardJsonResponse(
+            "/internal/shipments/${encodePath(shipmentId)}/scan",
+            "POST",
+            principal.userId,
+            body ?: ""
+        )
+    }
+
+    @PostMapping("/api/v1/warehouse/shipments/{shipmentId}/dispatch", produces = [MediaType.APPLICATION_JSON_VALUE])
+    fun dispatchShipment(
+        request: HttpServletRequest,
+        @PathVariable shipmentId: String,
+        @RequestBody(required = false) body: String?,
+        @RequestHeader(name = "Idempotency-Key", required = false) idempotencyKey: String?
+    ): ResponseEntity<Any> {
+        val principal = requireWarehousePrincipal(request) ?: return mobileUnauthOrForbidden(request)
+        val headers = idempotencyKey?.takeIf { it.isNotBlank() }?.let { mapOf("Idempotency-Key" to it) } ?: emptyMap()
+        return forwardJsonResponse(
+            "/internal/shipments/${encodePath(shipmentId)}/dispatch",
+            "POST",
+            principal.userId,
+            body ?: "",
+            headers
+        )
+    }
+
     @GetMapping("/", "/index.html", produces = [MediaType.TEXT_HTML_VALUE])
     fun home(request: HttpServletRequest): ResponseEntity<String> {
         val session = sessionService.readSession(request)?.second
@@ -236,6 +280,20 @@ class GatewayController(
         return session.takeIf { canAccessOrders(it.roles) }
     }
 
+    private fun requireWarehousePrincipal(request: HttpServletRequest): RequestPrincipal? {
+        val bearer = readBearerPrincipal(request)
+        if (bearer != null) {
+            return bearer.takeIf { canAccessWarehouse(it.roles) }
+        }
+
+        val session = sessionService.readSession(request)?.second ?: return null
+        return RequestPrincipal(
+            userId = session.userId,
+            roles = session.roles,
+            source = PrincipalSource.SESSION
+        ).takeIf { canAccessWarehouse(it.roles) }
+    }
+
     private fun unauthOrForbidden(request: HttpServletRequest): ResponseEntity<Any> {
         val hasSession = sessionService.readSession(request) != null
         return if (!hasSession) {
@@ -259,20 +317,65 @@ class GatewayController(
         }
     }
 
+    private fun mobileUnauthOrForbidden(request: HttpServletRequest): ResponseEntity<Any> {
+        val hasPrincipal = readBearerPrincipal(request) != null || sessionService.readSession(request) != null
+        return if (!hasPrincipal) {
+            ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(
+                mapOf(
+                    "error" to mapOf(
+                        "code" to "UNAUTHENTICATED",
+                        "message" to "Bearer token or session is required"
+                    )
+                )
+            )
+        } else {
+            ResponseEntity.status(HttpStatus.FORBIDDEN).body(
+                mapOf(
+                    "error" to mapOf(
+                        "code" to "FORBIDDEN",
+                        "message" to "Warehouse role is required to access shipments"
+                    )
+                )
+            )
+        }
+    }
+
     private fun canAccessOrders(roles: List<String>): Boolean {
         return roles.any { it == "sales-associate" || it == "manager" }
+    }
+
+    private fun canAccessWarehouse(roles: List<String>): Boolean {
+        return roles.any { it == "warehouse-operator" || it == "manager" }
     }
 
     private fun forwardJsonResponse(
         pathAndQuery: String,
         method: String,
         userId: String,
-        body: String? = null
+        body: String? = null,
+        additionalHeaders: Map<String, String> = emptyMap()
     ): ResponseEntity<Any> {
-        val forwarded = orderServiceClient.forward(pathAndQuery, method, userId, body)
+        val forwarded = orderServiceClient.forward(pathAndQuery, method, userId, body, additionalHeaders)
         return ResponseEntity.status(forwarded.statusCode)
             .headers(forwarded.headers)
             .body(forwarded.body ?: "")
+    }
+
+    private fun readBearerPrincipal(request: HttpServletRequest): RequestPrincipal? {
+        val header = request.getHeader("authorization") ?: return null
+        if (!header.startsWith("Bearer ")) {
+            return null
+        }
+
+        val token = header.removePrefix("Bearer ").trim()
+        if (token.isBlank()) {
+            return null
+        }
+
+        val claims = oidcService.decodeJwtPayload(token)
+        val userId = claims["preferred_username"]?.toString()?.takeIf { it.isNotBlank() } ?: return null
+        val roles = realmRoles(claims)
+        return RequestPrincipal(userId = userId, roles = roles, source = PrincipalSource.BEARER)
     }
 
     @Suppress("UNCHECKED_CAST")
@@ -663,4 +766,15 @@ class GatewayController(
         </html>
         """.trimIndent()
     }
+}
+
+private data class RequestPrincipal(
+    val userId: String,
+    val roles: List<String>,
+    val source: PrincipalSource
+)
+
+private enum class PrincipalSource {
+    SESSION,
+    BEARER
 }

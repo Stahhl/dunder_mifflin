@@ -85,7 +85,13 @@
       "serviceAccountsEnabled": false,
       "redirectUris": [
         "exp://*",
-        "dundermifflin://*"
+        "dundermifflin://*",
+        "http://localhost:3004/*",
+        "http://host.docker.internal:3004/*"
+      ],
+      "webOrigins": [
+        "http://localhost:3004",
+        "http://host.docker.internal:3004"
       ],
       "attributes": {
         "pkce.code.challenge.method": "S256"

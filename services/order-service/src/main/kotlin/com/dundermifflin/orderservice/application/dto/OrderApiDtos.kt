@@ -65,3 +65,28 @@ data class TimelineEventResponse(
     val at: Instant,
     val source: String
 )
+
+data class ShipmentItemResponse(
+    val sku: String,
+    val quantity: Int
+)
+
+data class ShipmentSummaryResponse(
+    val shipmentId: String,
+    val orderId: String,
+    val clientId: String,
+    val status: String,
+    val requestedShipDate: String,
+    val createdAt: Instant,
+    val items: List<ShipmentItemResponse>
+)
+
+data class ScanShipmentRequest(
+    val barcode: String?,
+    val quantity: Int?
+)
+
+data class DispatchShipmentRequest(
+    val truckId: String?,
+    val dispatchedAt: String?
+)
