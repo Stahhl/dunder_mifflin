@@ -4,7 +4,7 @@ services:
   postgres:
     image: postgres:16-alpine
     restart: unless-stopped
-    profiles: ["infra", "app", "e2e"]
+    profiles: ["infra", "app", "e2e", "test"]
     environment:
       POSTGRES_USER: ${POSTGRES_USER:-dundermifflin}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-bears_beets_battlestar}
@@ -29,7 +29,7 @@ services:
   rabbitmq:
     image: rabbitmq:3.13-management-alpine
     restart: unless-stopped
-    profiles: ["infra", "app", "e2e"]
+    profiles: ["infra", "app", "e2e", "test"]
     environment:
       RABBITMQ_DEFAULT_USER: ${RABBITMQ_DEFAULT_USER:-dunder}
       RABBITMQ_DEFAULT_PASS: ${RABBITMQ_DEFAULT_PASS:-mifflin}
@@ -252,6 +252,17 @@ services:
     environment:
       SERVICE_NAME: order-service
       SERVER_PORT: 8093
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: 5432
+      POSTGRES_DB: ${POSTGRES_DB:-dundermifflin}
+      POSTGRES_USER: ${POSTGRES_USER:-dundermifflin}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-bears_beets_battlestar}
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_AMQP_PORT: 5672
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_DEFAULT_USER:-dunder}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_DEFAULT_PASS:-mifflin}
+      RABBITMQ_VHOST: /
+      RABBITMQ_EXCHANGE: dm.domain.events
     ports:
       - "${ORDER_SERVICE_PORT:-8093}:8093"
     healthcheck:
@@ -417,6 +428,44 @@ services:
     environment:
       CI: "true"
       PNPM_STORE_PATH: /pnpm-store
+    volumes:
+      - ./:/workspace
+      - pnpm-store:/pnpm-store
+    networks: [dmf]
+
+  order-service-integration-tests:
+    image: node:20-alpine
+    profiles: ["test"]
+    init: true
+    working_dir: /workspace
+    depends_on:
+      postgres:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    command:
+      - /bin/sh
+      - -lc
+      - >
+        corepack enable &&
+        corepack prepare pnpm@10.4.0 --activate &&
+        pnpm config set store-dir /pnpm-store &&
+        pnpm install --no-frozen-lockfile &&
+        pnpm --filter @dunder/order-service test:integration
+    environment:
+      CI: "true"
+      PNPM_STORE_PATH: /pnpm-store
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: 5432
+      POSTGRES_DB: ${POSTGRES_DB:-dundermifflin}
+      POSTGRES_USER: ${POSTGRES_USER:-dundermifflin}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-bears_beets_battlestar}
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_AMQP_PORT: 5672
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_DEFAULT_USER:-dunder}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_DEFAULT_PASS:-mifflin}
+      RABBITMQ_VHOST: /
+      RABBITMQ_EXCHANGE: dm.domain.events
     volumes:
       - ./:/workspace
       - pnpm-store:/pnpm-store

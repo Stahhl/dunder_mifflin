@@ -8,7 +8,8 @@ Host dependency: Docker with Docker Compose v2 plugin.
 
 ## 2. Tooling
 
-- Unit tests: Vitest (Portal) via Docker Compose `test` profile (`unit-tests` service).
+- Unit tests: Vitest (Portal) + Node test runner (`order-service`) via Docker Compose `test` profile (`unit-tests` service).
+- Integration tests: `order-service` Postgres + RabbitMQ adapter checks via Docker Compose `test` profile (`order-service-integration-tests` service).
 - Framework: Playwright (TypeScript).
 - Runtime: Docker Compose `e2e` profile.
 - Artifacts: traces, screenshots, and videos on failure.
@@ -23,6 +24,12 @@ Unit test command:
 
 ```bash
 docker compose --profile test run --rm unit-tests
+```
+
+Order backend integration command:
+
+```bash
+docker compose --profile test run --rm order-service-integration-tests
 ```
 
 PR2 auth/navigation Playwright command:

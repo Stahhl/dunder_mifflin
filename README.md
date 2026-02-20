@@ -49,7 +49,7 @@ This repository contains the implementation plan and delivery docs for a demo ER
 
 - PR1 baseline is complete for local infra/auth setup and portal role-aware navigation.
 - PR2 Sales app access flow through gateway + Keycloak is implemented and covered by Playwright E2E.
-- PR3 backend-first scaffolding is in progress with gateway order routes backed by `order-service`.
+- PR3 backend-first scaffolding now includes `order-service` Postgres persistence and RabbitMQ `order.created.v1` publishing (Infinity UI flow still pending).
 - Planning/specification docs remain the source of truth for roadmap and contracts.
 
 ## Quickstart (Docker-Only)
@@ -63,6 +63,9 @@ docker compose --profile app up -d --build
 
 # run all workspace unit tests in Docker
 docker compose --profile test run --rm unit-tests
+
+# run order-service integration tests (postgres + rabbitmq adapters)
+docker compose --profile test run --rm order-service-integration-tests
 
 # run PR2 Playwright auth/navigation gate
 docker compose --profile test run --rm e2e-tests
