@@ -7,6 +7,7 @@ const keycloakInternalBaseUrl = process.env.KEYCLOAK_INTERNAL_BASE_URL ?? "http:
 const keycloakPublicPort = process.env.KEYCLOAK_PUBLIC_PORT ?? "8080";
 const oidcClientId = process.env.OIDC_CLIENT_ID ?? "dunder-mifflin-gateway";
 const oidcClientSecret = process.env.OIDC_CLIENT_SECRET ?? "gateway-secret-change-me";
+const orderServiceBaseUrl = process.env.ORDER_SERVICE_BASE_URL ?? "http://order-service:8093";
 const sessionMaxAgeMs = Number.parseInt(process.env.SESSION_MAX_AGE_MS ?? "1800000", 10);
 const stateMaxAgeMs = Number.parseInt(process.env.OIDC_STATE_MAX_AGE_MS ?? "300000", 10);
 
@@ -32,6 +33,17 @@ function jsonResponse(statusCode, payload) {
       "cache-control": "no-store"
     },
     body: JSON.stringify(payload)
+  };
+}
+
+function passThroughJsonResponse(statusCode, payloadText) {
+  return {
+    statusCode,
+    headers: {
+      "content-type": "application/json; charset=utf-8",
+      "cache-control": "no-store"
+    },
+    body: payloadText
   };
 }
 
@@ -87,6 +99,25 @@ function setCookie(name, value, { maxAgeSeconds = undefined, expires = undefined
 
 function clearCookie(name) {
   return setCookie(name, "", { maxAgeSeconds: 0, expires: new Date(0) });
+}
+
+async function readTextBody(req) {
+  const chunks = [];
+  let totalLength = 0;
+
+  for await (const chunk of req) {
+    totalLength += chunk.length;
+    if (totalLength > 512 * 1024) {
+      throw new Error("Payload too large");
+    }
+    chunks.push(chunk);
+  }
+
+  if (chunks.length === 0) {
+    return "";
+  }
+
+  return Buffer.concat(chunks).toString("utf8");
 }
 
 function randomToken(bytes = 24) {
@@ -388,6 +419,24 @@ function canAccessInfinity(roles) {
   return roles.includes("sales-associate") || roles.includes("manager");
 }
 
+function canAccessOrdersApi(roles) {
+  return roles.includes("sales-associate") || roles.includes("manager");
+}
+
+async function callOrderService(pathAndQuery, method, userId, requestBody = "") {
+  const response = await fetch(`${orderServiceBaseUrl}${pathAndQuery}`, {
+    method,
+    headers: {
+      "content-type": "application/json",
+      "x-user-id": userId
+    },
+    body: method === "GET" ? undefined : requestBody
+  });
+
+  const payloadText = await response.text();
+  return passThroughJsonResponse(response.status, payloadText);
+}
+
 async function handleRequest(req) {
   const parsedUrl = new URL(req.url ?? "/", `http://${req.headers.host ?? "localhost"}`);
   const path = parsedUrl.pathname;
@@ -409,6 +458,41 @@ async function handleRequest(req) {
   }
 
   const session = readSession(req);
+
+  if (path.startsWith("/api/v1/orders")) {
+    if (!session) {
+      return jsonResponse(401, { error: { code: "UNAUTHENTICATED", message: "Login is required" } });
+    }
+
+    if (!canAccessOrdersApi(session.roles)) {
+      return jsonResponse(403, {
+        error: { code: "FORBIDDEN", message: "Sales role is required to access orders" }
+      });
+    }
+
+    const query = parsedUrl.search ? parsedUrl.search : "";
+
+    if (req.method === "POST" && path === "/api/v1/orders") {
+      const requestBody = await readTextBody(req);
+      return callOrderService("/internal/orders", "POST", session.userId, requestBody);
+    }
+
+    if (req.method === "GET" && path === "/api/v1/orders") {
+      return callOrderService(`/internal/orders${query}`, "GET", session.userId);
+    }
+
+    const timelineMatch = path.match(/^\/api\/v1\/orders\/([^/]+)\/timeline$/);
+    if (req.method === "GET" && timelineMatch) {
+      return callOrderService(`/internal/orders/${timelineMatch[1]}/timeline`, "GET", session.userId);
+    }
+
+    const detailMatch = path.match(/^\/api\/v1\/orders\/([^/]+)$/);
+    if (req.method === "GET" && detailMatch) {
+      return callOrderService(`/internal/orders/${detailMatch[1]}`, "GET", session.userId);
+    }
+
+    return jsonResponse(404, { error: { code: "NOT_FOUND", message: "Order route not found" } });
+  }
 
   if (req.method === "GET" && path === "/api/v1/auth/me") {
     if (!session) {

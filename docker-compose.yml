@@ -177,6 +177,8 @@ services:
         condition: service_healthy
       keycloak-seed:
         condition: service_completed_successfully
+      order-service:
+        condition: service_healthy
     environment:
       SERVICE_NAME: gateway
       SERVER_PORT: 8081
@@ -185,6 +187,7 @@ services:
       KEYCLOAK_PUBLIC_PORT: ${KEYCLOAK_PORT:-8080}
       OIDC_CLIENT_ID: dunder-mifflin-gateway
       OIDC_CLIENT_SECRET: gateway-secret-change-me
+      ORDER_SERVICE_BASE_URL: http://order-service:8093
     ports:
       - "${GATEWAY_PORT:-8081}:8081"
     healthcheck:
@@ -251,6 +254,16 @@ services:
       SERVER_PORT: 8093
     ports:
       - "${ORDER_SERVICE_PORT:-8093}:8093"
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "node -e \"fetch('http://127.0.0.1:8093/actuator/health').then((r)=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))\""
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 20
+      start_period: 5s
     networks: [dmf]
 
   inventory-service:

@@ -48,7 +48,8 @@ This repository contains the implementation plan and delivery docs for a demo ER
 ## Current State
 
 - PR1 baseline is complete for local infra/auth setup and portal role-aware navigation.
-- PR2 focus is Sales app access flow through gateway + Keycloak roundtrip with Playwright E2E validation.
+- PR2 Sales app access flow through gateway + Keycloak is implemented and covered by Playwright E2E.
+- PR3 backend-first scaffolding is in progress with gateway order routes backed by `order-service`.
 - Planning/specification docs remain the source of truth for roadmap and contracts.
 
 ## Quickstart (Docker-Only)

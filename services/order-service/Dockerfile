@@ -1,6 +1,11 @@
-FROM alpine:3.20
+FROM node:20-alpine
 
-ARG APP_NAME=order-service
-ENV APP_NAME=${APP_NAME}
+WORKDIR /app
 
-CMD ["sh", "-c", "echo \"${APP_NAME} placeholder container. Replace this Dockerfile with real service/app build steps.\" && sleep infinity"]
+COPY server.mjs /app/server.mjs
+
+ENV SERVER_PORT=8093
+
+EXPOSE 8093
+
+CMD ["node", "server.mjs"]
