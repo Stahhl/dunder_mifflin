@@ -4,6 +4,8 @@ import { RabbitDomainEventPublisher } from "./messaging/rabbit-publisher.mjs";
 import { PostgresOrderStore } from "./store/postgres-order-store.mjs";
 
 const serverPort = Number.parseInt(process.env.SERVER_PORT ?? "8093", 10);
+const startupRetryAttempts = Number.parseInt(process.env.STARTUP_RETRY_ATTEMPTS ?? "30", 10);
+const startupRetryDelayMs = Number.parseInt(process.env.STARTUP_RETRY_DELAY_MS ?? "1000", 10);
 
 const orderStore = new PostgresOrderStore({
   host: process.env.POSTGRES_HOST ?? "postgres",
@@ -29,8 +31,16 @@ const eventPublisher = new RabbitDomainEventPublisher({
   exchange: process.env.RABBITMQ_EXCHANGE ?? "dm.domain.events"
 });
 
-await orderStore.init();
-await eventPublisher.connect();
+await withRetry(() => orderStore.init(), {
+  operation: "postgres init",
+  attempts: startupRetryAttempts,
+  delayMs: startupRetryDelayMs
+});
+await withRetry(() => eventPublisher.connect(), {
+  operation: "rabbitmq connect",
+  attempts: startupRetryAttempts,
+  delayMs: startupRetryDelayMs
+});
 
 const app = createOrderApp({ orderStore, eventPublisher });
 
@@ -82,4 +92,31 @@ function send(res, response) {
 function buildAmqpUrl({ user, password, host, port, vhost }) {
   const encodedVhost = vhost === "/" ? "%2F" : encodeURIComponent(vhost);
   return `amqp://${encodeURIComponent(user)}:${encodeURIComponent(password)}@${host}:${port}/${encodedVhost}`;
+}
+
+async function withRetry(operationFn, { operation, attempts, delayMs }) {
+  let lastError = null;
+
+  for (let attempt = 1; attempt <= attempts; attempt += 1) {
+    try {
+      return await operationFn();
+    } catch (errorObject) {
+      lastError = errorObject;
+      console.error(
+        `order-service startup: ${operation} failed (attempt ${attempt}/${attempts})`,
+        errorObject instanceof Error ? errorObject.message : errorObject
+      );
+      if (attempt < attempts) {
+        await delay(delayMs);
+      }
+    }
+  }
+
+  throw lastError instanceof Error ? lastError : new Error(`Failed ${operation}`);
+}
+
+function delay(milliseconds) {
+  return new Promise((resolve) => {
+    setTimeout(resolve, milliseconds);
+  });
 }
