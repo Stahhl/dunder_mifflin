@@ -92,4 +92,8 @@ docker compose --profile infra up -d
 
 # unit tests
 docker compose --profile test run --rm unit-tests
+
+# PR2 Playwright auth/navigation test
+# requires app profile services to be up
+docker compose --profile test run --rm e2e-tests
 ```

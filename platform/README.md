@@ -36,6 +36,10 @@ docker compose --profile infra up -d
 
 # run workspace unit tests in Docker
 docker compose --profile test run --rm unit-tests
+
+# run PR2 Playwright auth/navigation test
+# requires app profile services to be up
+docker compose --profile test run --rm e2e-tests
 ```
 
 ## Common Endpoints

@@ -1,6 +1,11 @@
-FROM alpine:3.20
+FROM node:20-alpine
 
-ARG APP_NAME=gateway
-ENV APP_NAME=${APP_NAME}
+WORKDIR /app
 
-CMD ["sh", "-c", "echo \"${APP_NAME} placeholder container. Replace this Dockerfile with real service/app build steps.\" && sleep infinity"]
+COPY server.mjs /app/server.mjs
+
+ENV SERVER_PORT=8081
+
+EXPOSE 8081
+
+CMD ["node", "server.mjs"]

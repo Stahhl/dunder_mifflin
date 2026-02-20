@@ -9,6 +9,13 @@ ADMIN_PASS=${KEYCLOAK_ADMIN_PASSWORD:-admin}
 
 $KCADM config credentials --server "$SERVER" --realm master --user "$ADMIN_USER" --password "$ADMIN_PASS"
 
+GATEWAY_CLIENT_ID=$($KCADM get clients -r "$REALM" -q clientId=dunder-mifflin-gateway | sed -n 's/.*"id" : "\([^"]*\)".*/\1/p' | head -n1)
+if [ -n "$GATEWAY_CLIENT_ID" ]; then
+  $KCADM update "clients/$GATEWAY_CLIENT_ID" -r "$REALM" \
+    -s 'redirectUris=["http://localhost:8081/*","http://host.docker.internal:8081/*","http://localhost:5173/*"]' \
+    -s 'webOrigins=["http://localhost:8081","http://host.docker.internal:8081","http://localhost:5173"]'
+fi
+
 for provider_name in dunder-ldap temp-ldap; do
   for id in $($KCADM get components -r "$REALM" -q name="$provider_name" | sed -n 's/.*"id" : "\([^"]*\)".*/\1/p'); do
     $KCADM delete "components/$id" -r "$REALM"

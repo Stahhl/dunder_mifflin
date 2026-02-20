@@ -5,6 +5,10 @@
   "scripts": {
     "dev:portal": "pnpm --filter @dunder/portal dev",
     "build:portal": "pnpm --filter @dunder/portal build",
-    "test:portal": "pnpm --filter @dunder/portal test"
+    "test:portal": "pnpm --filter @dunder/portal test",
+    "test:e2e:pr2": "playwright test --config tests/e2e/config/playwright.config.ts tests/e2e/specs/auth-sales-navigation.spec.ts"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.51.1"
   }
 }

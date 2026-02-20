@@ -62,4 +62,7 @@ docker compose --profile app up -d --build
 
 # run all workspace unit tests in Docker
 docker compose --profile test run --rm unit-tests
+
+# run PR2 Playwright auth/navigation gate
+docker compose --profile test run --rm e2e-tests
 ```

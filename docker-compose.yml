@@ -180,8 +180,23 @@ services:
     environment:
       SERVICE_NAME: gateway
       SERVER_PORT: 8081
+      KEYCLOAK_REALM: ${KEYCLOAK_REALM:-scranton-branch}
+      KEYCLOAK_INTERNAL_BASE_URL: http://keycloak:8080
+      KEYCLOAK_PUBLIC_PORT: ${KEYCLOAK_PORT:-8080}
+      OIDC_CLIENT_ID: dunder-mifflin-gateway
+      OIDC_CLIENT_SECRET: gateway-secret-change-me
     ports:
       - "${GATEWAY_PORT:-8081}:8081"
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "node -e \"fetch('http://127.0.0.1:8081/actuator/health').then((r)=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))\""
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 20
+      start_period: 5s
     networks: [dmf]
 
   profile-service:
@@ -300,7 +315,7 @@ services:
     image: dunder/portal-web:dev
     depends_on:
       gateway:
-        condition: service_started
+        condition: service_healthy
     environment:
       APP_NAME: portal-web
       APP_PORT: 3000
@@ -316,7 +331,7 @@ services:
     image: dunder/infinity-web:dev
     depends_on:
       gateway:
-        condition: service_started
+        condition: service_healthy
     environment:
       APP_NAME: infinity-web
       APP_PORT: 3001
@@ -332,7 +347,7 @@ services:
     image: dunder/accounting-web:dev
     depends_on:
       gateway:
-        condition: service_started
+        condition: service_healthy
     environment:
       APP_NAME: accounting-web
       APP_PORT: 3002
@@ -348,7 +363,7 @@ services:
     image: dunder/wuphf-widget:dev
     depends_on:
       gateway:
-        condition: service_started
+        condition: service_healthy
     environment:
       APP_NAME: wuphf-widget
       APP_PORT: 3003
@@ -364,7 +379,7 @@ services:
     image: dunder/warehouse-mobile:dev
     depends_on:
       gateway:
-        condition: service_started
+        condition: service_healthy
     environment:
       APP_NAME: warehouse-mobile
       APP_PORT: 3004
@@ -389,6 +404,32 @@ services:
     environment:
       CI: "true"
       PNPM_STORE_PATH: /pnpm-store
+    volumes:
+      - ./:/workspace
+      - pnpm-store:/pnpm-store
+    networks: [dmf]
+
+  e2e-tests:
+    image: mcr.microsoft.com/playwright:v1.51.1-jammy
+    profiles: ["test"]
+    init: true
+    working_dir: /workspace
+    command:
+      - /bin/bash
+      - -lc
+      - >
+        corepack enable &&
+        corepack prepare pnpm@10.4.0 --activate &&
+        ready=0; for i in $(seq 1 90); do if curl -fsS "$${PLAYWRIGHT_BASE_URL}/actuator/health" >/dev/null 2>&1; then ready=1; break; fi; sleep 2; done; [ "$$ready" -eq 1 ] &&
+        ready=0; for i in $(seq 1 90); do if curl -fsS "http://host.docker.internal:${KEYCLOAK_PORT:-8080}/realms/${KEYCLOAK_REALM:-scranton-branch}/.well-known/openid-configuration" >/dev/null 2>&1; then ready=1; break; fi; sleep 2; done; [ "$$ready" -eq 1 ] &&
+        pnpm config set store-dir /pnpm-store &&
+        pnpm install --no-frozen-lockfile &&
+        pnpm test:e2e:pr2
+    environment:
+      CI: "true"
+      PLAYWRIGHT_BASE_URL: http://host.docker.internal:${GATEWAY_PORT:-8081}
+    extra_hosts:
+      - host.docker.internal:host-gateway
     volumes:
       - ./:/workspace
       - pnpm-store:/pnpm-store

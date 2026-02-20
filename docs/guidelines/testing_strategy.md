@@ -25,6 +25,13 @@ Unit test command:
 docker compose --profile test run --rm unit-tests
 ```
 
+PR2 auth/navigation Playwright command:
+
+```bash
+# requires app profile services to be up
+docker compose --profile test run --rm e2e-tests
+```
+
 ## 4. Golden Path Specs
 
 1. PR2 auth and app navigation gate:
