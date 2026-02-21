@@ -23,7 +23,11 @@
     "test:e2e:pr7": "playwright test --config tests/e2e/config/playwright.config.ts tests/e2e/specs/wuphf-notification-widget.spec.ts",
     "test:e2e:pr8": "playwright test --config tests/e2e/config/playwright.config.ts tests/e2e/specs/warehouse-offline-sync.spec.ts",
     "test:e2e:pr9": "playwright test --config tests/e2e/config/playwright.config.ts tests/e2e/specs/reliability-error-state.spec.ts",
-    "test:e2e:smoke": "playwright test --config tests/e2e/config/playwright.config.ts tests/e2e/specs/auth-sales-navigation.spec.ts tests/e2e/specs/sales-order-placement.spec.ts tests/e2e/specs/warehouse-dispatch.spec.ts tests/e2e/specs/warehouse-offline-sync.spec.ts tests/e2e/specs/sales-order-timeline.spec.ts tests/e2e/specs/accounting-expense-decision.spec.ts tests/e2e/specs/wuphf-notification-widget.spec.ts tests/e2e/specs/reliability-error-state.spec.ts"
+    "test:e2e:golden": "playwright test --config tests/e2e/config/playwright.config.ts tests/e2e/specs/auth-sales-navigation.spec.ts tests/e2e/specs/sales-order-placement.spec.ts tests/e2e/specs/warehouse-dispatch.spec.ts tests/e2e/specs/warehouse-offline-sync.spec.ts tests/e2e/specs/sales-order-timeline.spec.ts tests/e2e/specs/accounting-expense-decision.spec.ts tests/e2e/specs/wuphf-notification-widget.spec.ts tests/e2e/specs/reliability-error-state.spec.ts",
+    "test:e2e:golden:report": "PLAYWRIGHT_JSON_OUTPUT_DIR=test-results PLAYWRIGHT_JSON_OUTPUT_NAME=playwright-results.json PLAYWRIGHT_JUNIT_OUTPUT_DIR=test-results PLAYWRIGHT_JUNIT_OUTPUT_NAME=playwright-junit.xml playwright test --config tests/e2e/config/playwright.config.ts tests/e2e/specs/auth-sales-navigation.spec.ts tests/e2e/specs/sales-order-placement.spec.ts tests/e2e/specs/warehouse-dispatch.spec.ts tests/e2e/specs/warehouse-offline-sync.spec.ts tests/e2e/specs/sales-order-timeline.spec.ts tests/e2e/specs/accounting-expense-decision.spec.ts tests/e2e/specs/wuphf-notification-widget.spec.ts tests/e2e/specs/reliability-error-state.spec.ts --reporter=list,json,junit",
+    "test:e2e:smoke": "pnpm test:e2e:golden",
+    "test:e2e:flake-check": "node tests/e2e/scripts/check-flake-rate.mjs",
+    "test:e2e:gate": "pnpm test:e2e:golden:report && pnpm test:e2e:flake-check"
   },
   "devDependencies": {
     "@playwright/test": "1.51.1"

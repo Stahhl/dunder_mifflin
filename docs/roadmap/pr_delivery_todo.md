@@ -53,7 +53,7 @@ This roadmap breaks work into sequential PRs. Each PR is sized to be reviewable 
 | PR7 | `tests/e2e/specs/wuphf-notification-widget.spec.ts` |
 | PR8 | `tests/e2e/specs/warehouse-offline-sync.spec.ts` |
 | PR9 | `tests/e2e/specs/reliability-error-state.spec.ts` |
-| PR10 | Aggregated golden-path CI gate over all required specs |
+| PR10 | `.github/workflows/pr10-golden-path-gate.yml` + `pnpm test:e2e:gate` aggregate gate |
 
 ## PR 1: Platform Login + App Navigation Shell
 **User-visible outcome:** Users can sign in and navigate from one central portal to each department app.
@@ -253,11 +253,13 @@ This roadmap breaks work into sequential PRs. Each PR is sized to be reviewable 
 - Implement and stabilize Playwright flows for Sales, Warehouse, Accounting, and notification cross-app behaviors.
 - Add CI gate that blocks merge on failing golden paths.
 - Track and reduce flaky tests.
+- Publish operational gate contract for commands, artifacts, and threshold handling.
 
 **Acceptance**
 - E2E suite runs in CI against `docker-compose.yml`.
 - Golden-path failures block merge.
 - Flaky tests are tracked and kept below agreed threshold.
+- CI gate implementation lives in `.github/workflows/pr10-golden-path-gate.yml`.
 
 ## Optional Follow-On PRs (after MVP)
 - PR 11: Sales CRM foundation in `apps/infinity` + `services/sales-service` (leads and client conversion).

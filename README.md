@@ -26,6 +26,7 @@ This repository contains the implementation plan and delivery docs for a demo ER
 
 ### Operations
 - [PR9 Reliability Signals Contract](./docs/operations/pr9_reliability_signals.md)
+- [PR10 End-to-End Quality Gate](./docs/operations/pr10_e2e_quality_gate.md)
 
 ### Contracts (Demo v1)
 - [REST API Contracts](./docs/contracts/rest_api_v1.md)
@@ -50,12 +51,12 @@ This repository contains the implementation plan and delivery docs for a demo ER
 
 ## Current State
 
-- PR1-PR8 are implemented locally, including auth/navigation, sales order flow + timeline, warehouse mobile, accounting approvals, WUPHF notifications, and warehouse offline replay.
+- PR1-PR10 are implemented locally, including auth/navigation, sales order flow + timeline, warehouse mobile, accounting approvals, WUPHF notifications, warehouse offline replay, and PR9 reliability signals.
 - Frontends in active use: `apps/portal`, `apps/infinity`, `apps/accounting`, `apps/warehouse-mobile`, and `apps/wuphf-widget` (embedded).
 - Backends in active use: `services/gateway`, `services/order-service`, `services/inventory-service`, `services/finance-service`, and `services/wuphf-service`.
 - Warehouse shipment API ownership is now in `services/inventory-service`, with `services/order-service` consuming `shipment.dispatched.v1` to keep order status/timeline in sync.
-- Playwright smoke coverage currently includes PR2-PR8 specs.
-- Roadmap/contracts docs remain the source of truth for remaining scope (PR9+).
+- Playwright golden-path coverage now aggregates required PR2-PR9 specs and is enforced via CI gate in PR10.
+- Roadmap/contracts docs remain the source of truth for follow-on scope (PR11+).
 
 ## Quickstart (Docker-Only)
 
@@ -72,6 +73,6 @@ docker compose --profile test run --rm unit-tests
 # run order-service integration tests (postgres + rabbitmq adapters)
 docker compose --profile test run --rm order-service-integration-tests
 
-# run Playwright smoke suite (current PR2-PR8 coverage)
+# run Playwright golden-path gate (PR2-PR9 + flaky-rate check)
 docker compose --profile test run --rm e2e-tests
 ```

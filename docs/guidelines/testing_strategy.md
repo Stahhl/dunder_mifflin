@@ -11,8 +11,8 @@ Host dependency: Docker with Docker Compose v2 plugin.
 - Unit tests: Vitest (Portal) + Node test runner (`order-service`) via Docker Compose `test` profile (`unit-tests` service).
 - Integration tests: `order-service` Postgres + RabbitMQ adapter checks via Docker Compose `test` profile (`order-service-integration-tests` service).
 - Framework: Playwright (TypeScript).
-- Runtime: Docker Compose `e2e` profile.
-- Artifacts: traces, screenshots, and videos on failure.
+- Runtime: Docker Compose `test` profile (`e2e-tests` service).
+- Artifacts: traces, screenshots, videos on failure + JSON/JUnit reports.
 
 ## 3. Environment
 
@@ -32,11 +32,17 @@ Order backend integration command:
 docker compose --profile test run --rm order-service-integration-tests
 ```
 
-Playwright smoke command (PR2 auth + PR3 order placement):
+Playwright PR10 golden gate command:
 
 ```bash
 # requires app profile services to be up
 docker compose --profile test run --rm e2e-tests
+```
+
+Underlying e2e gate command:
+
+```bash
+pnpm test:e2e:gate
 ```
 
 ## 4. Golden Path Specs
@@ -64,6 +70,18 @@ docker compose --profile test run --rm e2e-tests
 - Accountant approves/rejects with comment.
 - Submitter sees final decision and reason.
 
+5. WUPHF cross-app notifications:
+- Order and expense events appear in widget.
+- Deep links open expected app screens.
+
+6. Warehouse offline sync replay:
+- Mutations queue while network is unavailable.
+- Replay succeeds with idempotent backend behavior.
+
+7. Reliability error-state behavior:
+- Frontend error boundaries render user-friendly fallback UI.
+- Gateway/service trace headers and trace IDs are propagated.
+
 ## 5. Required Structure
 
 ```text
@@ -78,7 +96,13 @@ tests/e2e/
 │   ├── auth-sales-navigation.spec.ts
 │   ├── sales-order-placement.spec.ts
 │   ├── warehouse-dispatch.spec.ts
-│   └── accounting-expense.spec.ts
+│   ├── sales-order-timeline.spec.ts
+│   ├── accounting-expense-decision.spec.ts
+│   ├── wuphf-notification-widget.spec.ts
+│   ├── warehouse-offline-sync.spec.ts
+│   └── reliability-error-state.spec.ts
+├── scripts/
+│   └── check-flake-rate.mjs
 └── utils/
     ├── api-client.ts
     └── seed-client.ts
@@ -88,4 +112,6 @@ tests/e2e/
 
 - PR10 enables mandatory E2E merge gate.
 - Any failing golden path blocks merge.
-- Flake rate must stay below agreed threshold (default: 2% rolling 14 days).
+- Workflow: `.github/workflows/pr10-golden-path-gate.yml`.
+- The gate runs full Docker stack (`infra` + `app`) plus all `test` profile checks.
+- Flake rate must stay below threshold (default `2%`, enforced by `tests/e2e/scripts/check-flake-rate.mjs`).

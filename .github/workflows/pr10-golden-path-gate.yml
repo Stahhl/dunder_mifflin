@@ -1,0 +1,60 @@
+name: PR10 Golden Path Gate
+
+on:
+  pull_request:
+    branches:
+      - main
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+concurrency:
+  group: pr10-golden-path-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  golden-path:
+    name: Golden Path Quality Gate
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Prepare environment file
+        run: cp .env.example .env
+
+      - name: Start infra profile
+        run: docker compose --profile infra up -d
+
+      - name: Build and start app profile
+        run: docker compose --profile app up -d --build
+
+      - name: Workspace unit tests (Docker)
+        run: docker compose --profile test run --rm unit-tests
+
+      - name: Order-service integration tests (Docker)
+        run: docker compose --profile test run --rm order-service-integration-tests
+
+      - name: Golden path E2E gate (Docker)
+        env:
+          PLAYWRIGHT_FLAKE_THRESHOLD_PERCENT: "2"
+        run: docker compose --profile test run --rm e2e-tests
+
+      - name: Upload test artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: pr10-golden-path-artifacts
+          path: |
+            test-results
+            playwright-report
+          if-no-files-found: ignore
+
+      - name: Teardown stack
+        if: always()
+        run: docker compose down -v --remove-orphans

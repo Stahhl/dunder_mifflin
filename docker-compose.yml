@@ -544,7 +544,7 @@ services:
         ready=0; for i in $(seq 1 90); do if curl -fsS "$${PLAYWRIGHT_WUPHF_WIDGET_BASE_URL}/wuphf-widget.js" >/dev/null 2>&1; then ready=1; break; fi; sleep 2; done; [ "$$ready" -eq 1 ] &&
         pnpm config set store-dir /pnpm-store &&
         pnpm install --no-frozen-lockfile &&
-        pnpm test:e2e:smoke
+        pnpm test:e2e:gate
     environment:
       CI: "true"
       PLAYWRIGHT_BASE_URL: http://host.docker.internal:${GATEWAY_PORT:-8081}
