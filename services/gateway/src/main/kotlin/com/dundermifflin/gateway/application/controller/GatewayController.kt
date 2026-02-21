@@ -6,6 +6,7 @@ import com.dundermifflin.gateway.domain.service.SessionService
 import com.dundermifflin.gateway.infrastructure.client.FinanceServiceClient
 import com.dundermifflin.gateway.infrastructure.client.InventoryServiceClient
 import com.dundermifflin.gateway.infrastructure.client.OrderServiceClient
+import com.dundermifflin.gateway.infrastructure.client.SalesServiceClient
 import com.dundermifflin.gateway.infrastructure.client.WuphfServiceClient
 import com.dundermifflin.gateway.infrastructure.observability.REQUEST_ID_ATTR
 import com.dundermifflin.gateway.infrastructure.observability.REQUEST_ID_HEADER
@@ -43,6 +44,7 @@ class GatewayController(
     private val sessionService: SessionService,
     private val oidcService: OidcService,
     private val gatewayProperties: GatewayProperties,
+    private val salesServiceClient: SalesServiceClient,
     private val orderServiceClient: OrderServiceClient,
     private val inventoryServiceClient: InventoryServiceClient,
     private val financeServiceClient: FinanceServiceClient,
@@ -170,6 +172,69 @@ class GatewayController(
     ): ResponseEntity<Any> {
         val session = requireSalesSession(request) ?: return unauthOrForbidden(request)
         return forwardJsonResponse("/internal/orders", "POST", session.userId, body ?: "")
+    }
+
+    @PostMapping("/api/v1/sales/leads", produces = [MediaType.APPLICATION_JSON_VALUE])
+    fun createLead(
+        request: HttpServletRequest,
+        @RequestBody(required = false) body: String?
+    ): ResponseEntity<Any> {
+        val session = requireSalesSession(request) ?: return unauthOrForbidden(request)
+        return forwardSalesJsonResponse("/internal/sales/leads", "POST", session.userId, body ?: "")
+    }
+
+    @GetMapping("/api/v1/sales/leads", produces = [MediaType.APPLICATION_JSON_VALUE])
+    fun listLeads(
+        request: HttpServletRequest,
+        @RequestParam(name = "status", required = false) status: String?
+    ): ResponseEntity<Any> {
+        val session = requireSalesSession(request) ?: return unauthOrForbidden(request)
+        val query = status?.takeIf { it.isNotBlank() }?.let { "?status=${encodePath(it)}" } ?: ""
+        return forwardSalesJsonResponse("/internal/sales/leads$query", "GET", session.userId)
+    }
+
+    @GetMapping("/api/v1/sales/leads/{leadId}", produces = [MediaType.APPLICATION_JSON_VALUE])
+    fun getLead(
+        request: HttpServletRequest,
+        @PathVariable leadId: String
+    ): ResponseEntity<Any> {
+        val session = requireSalesSession(request) ?: return unauthOrForbidden(request)
+        return forwardSalesJsonResponse("/internal/sales/leads/${encodePath(leadId)}", "GET", session.userId)
+    }
+
+    @PostMapping("/api/v1/sales/leads/{leadId}", produces = [MediaType.APPLICATION_JSON_VALUE])
+    fun updateLead(
+        request: HttpServletRequest,
+        @PathVariable leadId: String,
+        @RequestBody(required = false) body: String?
+    ): ResponseEntity<Any> {
+        val session = requireSalesSession(request) ?: return unauthOrForbidden(request)
+        return forwardSalesJsonResponse(
+            "/internal/sales/leads/${encodePath(leadId)}",
+            "POST",
+            session.userId,
+            body ?: ""
+        )
+    }
+
+    @PostMapping("/api/v1/sales/leads/{leadId}/convert", produces = [MediaType.APPLICATION_JSON_VALUE])
+    fun convertLead(
+        request: HttpServletRequest,
+        @PathVariable leadId: String
+    ): ResponseEntity<Any> {
+        val session = requireSalesSession(request) ?: return unauthOrForbidden(request)
+        return forwardSalesJsonResponse(
+            "/internal/sales/leads/${encodePath(leadId)}/convert",
+            "POST",
+            session.userId,
+            body = ""
+        )
+    }
+
+    @GetMapping("/api/v1/sales/clients", produces = [MediaType.APPLICATION_JSON_VALUE])
+    fun listClients(request: HttpServletRequest): ResponseEntity<Any> {
+        val session = requireSalesSession(request) ?: return unauthOrForbidden(request)
+        return forwardSalesJsonResponse("/internal/sales/clients", "GET", session.userId)
     }
 
     @GetMapping("/api/v1/orders", produces = [MediaType.APPLICATION_JSON_VALUE])
@@ -655,6 +720,24 @@ class GatewayController(
             userId,
             body,
             currentRequestTraceHeaders() + additionalHeaders
+        )
+        return ResponseEntity.status(forwarded.statusCode)
+            .headers(forwarded.headers)
+            .body(forwarded.body ?: "")
+    }
+
+    private fun forwardSalesJsonResponse(
+        pathAndQuery: String,
+        method: String,
+        userId: String,
+        body: String? = null
+    ): ResponseEntity<Any> {
+        val forwarded = salesServiceClient.forward(
+            pathAndQuery,
+            method,
+            userId,
+            body,
+            currentRequestTraceHeaders()
         )
         return ResponseEntity.status(forwarded.statusCode)
             .headers(forwarded.headers)

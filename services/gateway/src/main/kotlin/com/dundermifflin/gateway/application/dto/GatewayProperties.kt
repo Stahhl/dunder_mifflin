@@ -9,6 +9,7 @@ data class GatewayProperties(
     val keycloakPublicPort: Int = 8080,
     val oidcClientId: String = "dunder-mifflin-gateway",
     val oidcClientSecret: String = "gateway-secret-change-me",
+    val salesServiceBaseUrl: String = "http://sales-service:8092",
     val orderServiceBaseUrl: String = "http://order-service:8093",
     val inventoryServiceBaseUrl: String = "http://inventory-service:8094",
     val financeServiceBaseUrl: String = "http://finance-service:8095",

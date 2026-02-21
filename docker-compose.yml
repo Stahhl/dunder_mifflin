@@ -177,6 +177,8 @@ services:
         condition: service_healthy
       keycloak-seed:
         condition: service_completed_successfully
+      sales-service:
+        condition: service_healthy
       order-service:
         condition: service_healthy
       inventory-service:
@@ -193,6 +195,7 @@ services:
       KEYCLOAK_PUBLIC_PORT: ${KEYCLOAK_PORT:-8080}
       OIDC_CLIENT_ID: dunder-mifflin-gateway
       OIDC_CLIENT_SECRET: gateway-secret-change-me
+      SALES_SERVICE_BASE_URL: http://sales-service:8092
       ORDER_SERVICE_BASE_URL: http://order-service:8093
       INVENTORY_SERVICE_BASE_URL: http://inventory-service:8094
       FINANCE_SERVICE_BASE_URL: http://finance-service:8095
@@ -244,8 +247,26 @@ services:
     environment:
       SERVICE_NAME: sales-service
       SERVER_PORT: 8092
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: 5432
+      POSTGRES_DB: ${POSTGRES_DB:-dundermifflin}
+      POSTGRES_USER: ${POSTGRES_USER:-dundermifflin}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-bears_beets_battlestar}
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_AMQP_PORT: 5672
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_DEFAULT_USER:-dunder}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_DEFAULT_PASS:-mifflin}
+      RABBITMQ_VHOST: /
+      RABBITMQ_EXCHANGE: dm.domain.events
     ports:
       - "${SALES_SERVICE_PORT:-8092}:8092"
+    healthcheck:
+      test:
+        ["CMD-SHELL", "curl -fsS http://127.0.0.1:8092/actuator/health >/dev/null || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 20
+      start_period: 5s
     networks: [dmf]
 
   order-service:

@@ -43,6 +43,7 @@ label {
 }
 
 input,
+select,
 textarea,
 button,
 .button {
@@ -140,6 +141,17 @@ th {
 
 .timeline-link {
   width: auto;
+}
+
+.lead-actions-cell {
+  display: flex;
+  gap: 0.4rem;
+}
+
+.inline-action {
+  width: auto;
+  white-space: nowrap;
+  padding: 0.35rem 0.55rem;
 }
 
 .inline-link {

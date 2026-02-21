@@ -14,6 +14,7 @@ gateway:
   keycloak-public-port: ${KEYCLOAK_PUBLIC_PORT:8080}
   oidc-client-id: ${OIDC_CLIENT_ID:dunder-mifflin-gateway}
   oidc-client-secret: ${OIDC_CLIENT_SECRET:gateway-secret-change-me}
+  sales-service-base-url: ${SALES_SERVICE_BASE_URL:http://sales-service:8092}
   order-service-base-url: ${ORDER_SERVICE_BASE_URL:http://order-service:8093}
   inventory-service-base-url: ${INVENTORY_SERVICE_BASE_URL:http://inventory-service:8094}
   finance-service-base-url: ${FINANCE_SERVICE_BASE_URL:http://finance-service:8095}

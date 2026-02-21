@@ -56,7 +56,7 @@ This roadmap breaks work into sequential PRs. Each PR is sized to be reviewable 
 | PR8 | `tests/e2e/specs/warehouse-offline-sync.spec.ts` |
 | PR9 | `tests/e2e/specs/reliability-error-state.spec.ts` |
 | PR10 | `.github/workflows/pr10-golden-path-gate.yml` + `pnpm test:e2e:gate` aggregate gate |
-| PR11 | `tests/e2e/specs/infinity-crm-client-conversion.spec.ts` (planned) |
+| PR11 | `tests/e2e/specs/infinity-crm-client-conversion.spec.ts` |
 | PR12 | `tests/e2e/specs/portal-profile-preferences.spec.ts` (planned) |
 
 ## PR 1: Platform Login + App Navigation Shell
@@ -251,7 +251,7 @@ This roadmap breaks work into sequential PRs. Each PR is sized to be reviewable 
 - Backend/system scope: full docker-compose stack exercised in CI gate
 - Infra dependencies: CI environment with compose profiles for infra + apps + services
 - Non-goals: adding new product functionality
-- E2E coverage: aggregate gate over PR2-PR9 required specs
+- E2E coverage: aggregate gate over PR2-PR11 required specs
 
 **Scope**
 - Implement and stabilize Playwright flows for Sales, Warehouse, Accounting, and notification cross-app behaviors.

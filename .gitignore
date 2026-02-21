@@ -7,3 +7,6 @@ test-results
 playwright-report
 .DS_Store
 .env
+services/**/.gradle
+services/**/.kotlin
+services/**/build

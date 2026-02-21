@@ -41,6 +41,55 @@ export interface CreateOrderResponse {
   createdAt: string;
 }
 
+export type LeadStatus = "NEW" | "CONTACTED" | "QUALIFIED" | "DISQUALIFIED" | "CONVERTED";
+
+export interface LeadSummary {
+  leadId: string;
+  companyName: string;
+  contactName: string;
+  contactEmail: string;
+  status: LeadStatus;
+  createdAt: string;
+  convertedClientId?: string | null;
+}
+
+export interface LeadDetail extends LeadSummary {
+  phone: string;
+  notes: string;
+  createdBy: string;
+  updatedAt: string;
+  convertedAt?: string | null;
+}
+
+export interface CreateLeadRequest {
+  companyName: string;
+  contactName: string;
+  contactEmail: string;
+  phone: string;
+  notes?: string;
+}
+
+export interface UpdateLeadRequest {
+  status: LeadStatus;
+  notes?: string;
+}
+
+export interface LeadConversionResponse {
+  leadId: string;
+  clientId: string;
+  convertedAt: string;
+  alreadyConverted: boolean;
+}
+
+export interface ClientSummary {
+  clientId: string;
+  sourceLeadId: string;
+  companyName: string;
+  contactName: string;
+  contactEmail: string;
+  createdAt: string;
+}
+
 function inferGatewayBaseUrl(): string {
   if (typeof window !== "undefined" && window.location?.hostname) {
     return `${window.location.protocol}//${window.location.hostname}:8081`;
@@ -166,4 +215,63 @@ export function openTimelineStream(orderId: string): EventSource {
   return new EventSource(buildGatewayUrl(`/api/v1/orders/${encodeURIComponent(orderId)}/timeline/stream`), {
     withCredentials: true
   });
+}
+
+export async function createLead(payload: CreateLeadRequest): Promise<LeadDetail> {
+  return requestJson<LeadDetail>(
+    "/api/v1/sales/leads",
+    {
+      method: "POST",
+      headers: {
+        "content-type": "application/json"
+      },
+      body: JSON.stringify(payload)
+    },
+    "Lead creation failed"
+  );
+}
+
+export async function listLeads(status?: LeadStatus): Promise<{ items: LeadSummary[]; total: number }> {
+  const search = status ? `?status=${encodeURIComponent(status)}` : "";
+  return requestJson<{ items: LeadSummary[]; total: number }>(
+    `/api/v1/sales/leads${search}`,
+    { method: "GET" },
+    "Unable to load leads"
+  );
+}
+
+export async function updateLead(leadId: string, payload: UpdateLeadRequest): Promise<LeadDetail> {
+  return requestJson<LeadDetail>(
+    `/api/v1/sales/leads/${encodeURIComponent(leadId)}`,
+    {
+      method: "POST",
+      headers: {
+        "content-type": "application/json"
+      },
+      body: JSON.stringify(payload)
+    },
+    "Unable to update lead"
+  );
+}
+
+export async function convertLead(leadId: string): Promise<LeadConversionResponse> {
+  return requestJson<LeadConversionResponse>(
+    `/api/v1/sales/leads/${encodeURIComponent(leadId)}/convert`,
+    {
+      method: "POST",
+      headers: {
+        "content-type": "application/json"
+      },
+      body: "{}"
+    },
+    "Unable to convert lead"
+  );
+}
+
+export async function listClients(): Promise<{ items: ClientSummary[]; total: number }> {
+  return requestJson<{ items: ClientSummary[]; total: number }>(
+    "/api/v1/sales/clients",
+    { method: "GET" },
+    "Unable to load clients"
+  );
 }

@@ -82,6 +82,10 @@ pnpm test:e2e:gate
 - Frontend error boundaries render user-friendly fallback UI.
 - Gateway/service trace headers and trace IDs are propagated.
 
+8. Infinity CRM lead conversion:
+- Sales user creates lead, marks it qualified, converts it to client.
+- Converted client ID is usable in downstream order placement.
+
 ## 5. Required Structure
 
 ```text
@@ -100,7 +104,8 @@ tests/e2e/
 │   ├── accounting-expense-decision.spec.ts
 │   ├── wuphf-notification-widget.spec.ts
 │   ├── warehouse-offline-sync.spec.ts
-│   └── reliability-error-state.spec.ts
+│   ├── reliability-error-state.spec.ts
+│   └── infinity-crm-client-conversion.spec.ts
 ├── scripts/
 │   └── check-flake-rate.mjs
 └── utils/
