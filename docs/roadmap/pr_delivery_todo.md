@@ -22,6 +22,8 @@ This roadmap breaks work into sequential PRs. Each PR is sized to be reviewable 
 | PR8 | `apps/warehouse-mobile` offline queue/sync UX | `services/inventory-service` warehouse ownership + idempotent mutation handling | Offline-first safety and replay. |
 | PR9 | Portal/Infinity/Warehouse/Accounting reliability UX | Gateway + all in-scope domain services observability/error standards | User-facing reliability + tracing. |
 | PR10 | `tests/e2e` golden-path suite | Full app/backend stack in CI | Merge gate for end-to-end quality. |
+| PR11 | `apps/infinity` CRM leads/clients experience | `services/gateway`, `services/sales-service` | First dedicated Sales CRM domain service rollout. |
+| PR12 | `apps/portal` user profile/preferences | `services/gateway`, `services/profile-service` | User self-service profile and defaults. |
 
 ## Component First-Delivery Matrix
 
@@ -37,9 +39,9 @@ This roadmap breaks work into sequential PRs. Each PR is sized to be reviewable 
 | `services/finance-service` | Backend service | PR6 | Expense review workflow. |
 | `services/wuphf-service` | Backend service | PR7 | Notifications API/events. |
 | `services/inventory-service` | Backend service | PR8 | Becomes primary warehouse shipment owner. |
-| `services/sales-service` | Backend service | PR11 (proposed) | Lead/client domain not in PR1-PR10 committed scope yet. |
-| `services/profile-service` | Backend service | PR12 (proposed) | User profile/preferences domain not in PR1-PR10 committed scope yet. |
-| `tests/e2e` | Quality gate | PR2 | Starts in PR2 and expands through PR10. |
+| `services/sales-service` | Backend service | PR11 | Lead/client CRM domain for Infinity sales workflows. |
+| `services/profile-service` | Backend service | PR12 | User profile/preferences domain backing Portal settings. |
+| `tests/e2e` | Quality gate | PR2 | Starts in PR2, hardens in PR10 gate, then expands with PR11+ specs. |
 
 ## Current E2E Coverage by PR
 
@@ -54,6 +56,8 @@ This roadmap breaks work into sequential PRs. Each PR is sized to be reviewable 
 | PR8 | `tests/e2e/specs/warehouse-offline-sync.spec.ts` |
 | PR9 | `tests/e2e/specs/reliability-error-state.spec.ts` |
 | PR10 | `.github/workflows/pr10-golden-path-gate.yml` + `pnpm test:e2e:gate` aggregate gate |
+| PR11 | `tests/e2e/specs/infinity-crm-client-conversion.spec.ts` (planned) |
+| PR12 | `tests/e2e/specs/portal-profile-preferences.spec.ts` (planned) |
 
 ## PR 1: Platform Login + App Navigation Shell
 **User-visible outcome:** Users can sign in and navigate from one central portal to each department app.
@@ -261,9 +265,55 @@ This roadmap breaks work into sequential PRs. Each PR is sized to be reviewable 
 - Flaky tests are tracked and kept below agreed threshold.
 - CI gate implementation lives in `.github/workflows/pr10-golden-path-gate.yml`.
 
-## Optional Follow-On PRs (after MVP)
-- PR 11: Sales CRM foundation in `apps/infinity` + `services/sales-service` (leads and client conversion).
-- PR 12: User profile/preferences in Portal + `services/profile-service`.
+## PR 11: Sales CRM Foundation (Leads + Client Conversion)
+**User-visible outcome:** Sales staff can manage leads in Infinity and convert qualified leads into clients used by order workflows.
+
+**Included Components**
+- Frontend apps: `apps/infinity` CRM workspace (lead list/detail, conversion actions)
+- Backend services: `services/gateway` (`/api/v1/sales/*` routing/authz), `services/sales-service` (lead/client domain + persistence)
+- Infra dependencies: PostgreSQL persistence for sales CRM data + domain event publication for conversions
+- Non-goals: commissions, forecasting, and territory analytics
+- E2E coverage: `tests/e2e/specs/infinity-crm-client-conversion.spec.ts`
+
+**Scope**
+- Add Infinity CRM routes for lead backlog, lead detail, and conversion workflow.
+- Implement `sales-service` endpoints for lead create/list/get/update and lead-to-client conversion.
+- Define conversion behavior that creates immutable client records and links originating lead.
+- Expose converted clients to Infinity order entry selectors to reduce manual client ID entry.
+- Emit client conversion domain events for downstream integrations.
+
+**Acceptance**
+- Sales-associate user can create and update leads with status progression.
+- Converting a qualified lead creates a client with stable client ID and conversion timestamp.
+- Converted client is selectable in Infinity order placement flow.
+- Unauthorized roles cannot mutate sales CRM entities.
+- E2E flow from lead creation to successful conversion passes.
+
+## PR 12: User Profile and Preferences Service
+**User-visible outcome:** Users can manage personal profile settings in Portal and have preferences persist across sessions and apps.
+
+**Included Components**
+- Frontend apps: `apps/portal` profile and preferences settings pages
+- Backend services: `services/gateway` (`/api/v1/profile/*` routing/authz), `services/profile-service` (profile/preferences domain + persistence)
+- Infra dependencies: user identity linkage to Keycloak subject IDs + PostgreSQL persistence for profile records
+- Non-goals: role delegation/admin policy controls (PR16), advanced notification workflows
+- E2E coverage: `tests/e2e/specs/portal-profile-preferences.spec.ts`
+
+**Scope**
+- Add Portal settings UI for profile details and application preferences.
+- Implement `profile-service` endpoints for current-user profile read/update.
+- Persist preference keys including default landing app and notification defaults.
+- Apply saved default app preference at post-login app selection/redirect flow.
+- Publish profile-updated events for optional downstream consumers.
+
+**Acceptance**
+- Logged-in user can view and update own profile fields and preferences.
+- Preferences persist after logout/login and browser refresh.
+- Default app preference is honored on next authenticated navigation flow.
+- Users cannot read or modify another user profile through API.
+- E2E flow for profile update and persisted preference verification passes.
+
+## Optional Follow-On PRs (after PR12)
 - PR 13: Commission calculator and sales analytics widgets.
 - PR 14: Warehouse safety checklist + baler lock workflow.
 - PR 15: PPC calendar + conference room booking in portal.
