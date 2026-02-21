@@ -27,6 +27,7 @@ This repository contains the implementation plan and delivery docs for a demo ER
 ### Operations
 - [PR9 Reliability Signals Contract](./docs/operations/pr9_reliability_signals.md)
 - [PR10 End-to-End Quality Gate](./docs/operations/pr10_e2e_quality_gate.md)
+- [Manual Testing Guide](./docs/operations/manual_testing_guide.md)
 
 ### Contracts (Demo v1)
 - [REST API Contracts](./docs/contracts/rest_api_v1.md)
