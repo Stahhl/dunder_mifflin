@@ -13,6 +13,7 @@ import {
   listOrders,
   openTimelineStream
 } from "../shared/api";
+import { WuphfWidget } from "../shared/WuphfWidget";
 
 type SessionState =
   | { status: "loading" }
@@ -58,6 +59,21 @@ function timelineMeta(orderId: string, events: readonly OrderTimelineEvent[]): s
   return `Showing ${events.length} timeline event(s) for ${orderId}.`;
 }
 
+function syncOrderIdQuery(orderId: string) {
+  if (typeof window === "undefined") {
+    return;
+  }
+
+  const url = new URL(window.location.href);
+  if (orderId.trim()) {
+    url.searchParams.set("orderId", orderId.trim());
+  } else {
+    url.searchParams.delete("orderId");
+  }
+
+  window.history.replaceState({}, "", `${url.pathname}${url.search}`);
+}
+
 export function App() {
   const [session, setSession] = useState<SessionState>({ status: "loading" });
   const [form, setForm] = useState<FormState>({
@@ -101,6 +117,7 @@ export function App() {
     if (!trimmedOrderId) {
       setTimelineEvents([]);
       setTimelineMetaText("Enter an order ID to inspect timeline events.");
+      syncOrderIdQuery("");
       return;
     }
 
@@ -109,6 +126,7 @@ export function App() {
     setTimelineInput(payload.orderId);
     setTimelineEvents(payload.events ?? []);
     setTimelineMetaText(timelineMeta(payload.orderId, payload.events ?? []));
+    syncOrderIdQuery(payload.orderId);
   }, []);
 
   useEffect(() => {
@@ -133,6 +151,11 @@ export function App() {
 
         setSession({ status: "ready", user: auth });
         await loadHistory("");
+
+        const deepLinkedOrderId = new URLSearchParams(window.location.search).get("orderId")?.trim();
+        if (deepLinkedOrderId) {
+          await loadTimeline(deepLinkedOrderId);
+        }
       } catch (error) {
         if (!active) {
           return;
@@ -154,7 +177,7 @@ export function App() {
     return () => {
       active = false;
     };
-  }, [loadHistory]);
+  }, [loadHistory, loadTimeline]);
 
   useEffect(() => {
     timelineStreamRef.current?.close();
@@ -290,6 +313,9 @@ export function App() {
 
   return (
     <main className="wrap">
+      <section className="widget-row">
+        <WuphfWidget returnTo="/infinity" />
+      </section>
       <h1>Infinity Sales App (PR5)</h1>
       <p>
         Welcome, <strong>{session.user.displayName}</strong>. Roles: {session.user.roles.join(", ")}

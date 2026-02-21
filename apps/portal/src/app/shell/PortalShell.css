@@ -50,6 +50,15 @@
   gap: 0.8rem;
 }
 
+.portal-wuphf {
+  min-width: 180px;
+}
+
+.portal-wuphf__status {
+  margin: 0;
+  font-size: 0.82rem;
+}
+
 .portal-switcher {
   display: grid;
   gap: 0.2rem;

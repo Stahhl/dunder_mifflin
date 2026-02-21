@@ -1,4 +1,12 @@
-const gatewayBaseUrl = (import.meta.env.VITE_GATEWAY_BASE_URL ?? "").replace(/\/$/, "");
+function inferGatewayBaseUrl(): string {
+  if (typeof window !== "undefined" && window.location?.hostname) {
+    return `${window.location.protocol}//${window.location.hostname}:8081`;
+  }
+
+  return "http://localhost:8081";
+}
+
+const gatewayBaseUrl = (import.meta.env.VITE_GATEWAY_BASE_URL?.trim() || inferGatewayBaseUrl()).replace(/\/$/, "");
 const loginPath = "/oauth2/authorization/keycloak";
 const logoutPath = "/logout";
 

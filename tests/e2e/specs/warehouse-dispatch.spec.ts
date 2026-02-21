@@ -60,7 +60,7 @@ test("warehouse mobile can dispatch shipment and sales sees SHIPPED", async ({ b
   await warehousePage.getByTestId("warehouse-dispatch-btn").click();
   await expect(warehousePage.getByTestId("warehouse-notice")).toContainText("Order is now SHIPPED");
 
-  await warehouseContext.close();
+  await closeContextIgnoreArtifactsError(warehouseContext);
 
   await page.locator("#refresh-history-btn").click();
   await expect(page.locator("#history-body")).toContainText(orderId);
@@ -70,4 +70,15 @@ test("warehouse mobile can dispatch shipment and sales sees SHIPPED", async ({ b
 function tomorrowAsIsoDate(): string {
   const tomorrow = new Date(Date.now() + 24 * 60 * 60 * 1000);
   return tomorrow.toISOString().slice(0, 10);
+}
+
+async function closeContextIgnoreArtifactsError(context: { close: () => Promise<void> }) {
+  try {
+    await context.close();
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    if (!message.includes("ENOENT")) {
+      throw error;
+    }
+  }
 }

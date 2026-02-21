@@ -2,6 +2,7 @@ import { NavLink, useLocation, useNavigate } from "react-router-dom";
 import { getPortalRoute } from "../../shared/auth/access";
 import type { AppDefinition, AuthMeResponse } from "../../shared/auth/types";
 import { useAuth } from "../../shared/auth/AuthProvider";
+import { WuphfWidget } from "../../shared/wuphf/WuphfWidget";
 import "./PortalShell.css";
 
 interface PortalShellProps {
@@ -47,6 +48,10 @@ export function PortalShell({ user, visibleApps, children }: PortalShellProps) {
             <button type="button" onClick={logout}>
               Log out
             </button>
+          </div>
+
+          <div className="portal-wuphf">
+            <WuphfWidget returnTo={location.pathname} />
           </div>
         </div>
       </header>

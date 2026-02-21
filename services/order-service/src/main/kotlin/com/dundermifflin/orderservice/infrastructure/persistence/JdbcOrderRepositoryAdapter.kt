@@ -194,9 +194,11 @@ class JdbcOrderRepositoryAdapter(
             return DispatchShipmentResult(
                 shipmentId = shipmentId,
                 orderId = orderId,
+                orderCreatedBy = order.createdBy,
                 shipmentStatus = "DISPATCHED",
                 orderStatus = OrderStatus.SHIPPED.name,
-                dispatchedAt = dispatchedAt
+                dispatchedAt = dispatchedAt,
+                alreadyDispatched = true
             )
         }
 
@@ -229,9 +231,11 @@ class JdbcOrderRepositoryAdapter(
         return DispatchShipmentResult(
             shipmentId = shipmentId,
             orderId = orderId,
+            orderCreatedBy = order.createdBy,
             shipmentStatus = "DISPATCHED",
             orderStatus = OrderStatus.SHIPPED.name,
-            dispatchedAt = dispatchedAt
+            dispatchedAt = dispatchedAt,
+            alreadyDispatched = false
         )
     }
 

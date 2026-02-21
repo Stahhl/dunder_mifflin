@@ -1,6 +1,15 @@
-FROM alpine:3.20
+FROM gradle:8.10.2-jdk21 AS build
 
-ARG APP_NAME=wuphf-service
-ENV APP_NAME=${APP_NAME}
+WORKDIR /workspace
+COPY . .
+RUN gradle --no-daemon clean bootJar
 
-CMD ["sh", "-c", "echo \"${APP_NAME} placeholder container. Replace this Dockerfile with real service/app build steps.\" && sleep infinity"]
+FROM eclipse-temurin:21-jre
+
+WORKDIR /app
+COPY --from=build /workspace/build/libs/*.jar /app/service.jar
+
+ENV SERVER_PORT=8096
+EXPOSE 8096
+
+ENTRYPOINT ["java", "-jar", "/app/service.jar"]

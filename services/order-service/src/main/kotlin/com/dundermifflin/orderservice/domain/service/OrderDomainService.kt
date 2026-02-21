@@ -61,6 +61,19 @@ class OrderDomainService(
         ) ?: return null
 
         dispatchByIdempotency[command.idempotencyKey] = dispatched
+
+        if (!dispatched.alreadyDispatched) {
+            try {
+                domainEventPublisherPort.publishShipmentDispatched(
+                    result = dispatched,
+                    dispatchedBy = command.dispatchedBy,
+                    truckId = command.truckId
+                )
+            } catch (exception: Exception) {
+                logger.error("Failed to publish shipment.dispatched.v1 in order-service", exception)
+            }
+        }
+
         return dispatched
     }
 }

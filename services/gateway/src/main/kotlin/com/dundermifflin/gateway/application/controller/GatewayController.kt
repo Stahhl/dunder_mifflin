@@ -5,6 +5,7 @@ import com.dundermifflin.gateway.domain.model.GatewaySession
 import com.dundermifflin.gateway.domain.service.SessionService
 import com.dundermifflin.gateway.infrastructure.client.FinanceServiceClient
 import com.dundermifflin.gateway.infrastructure.client.OrderServiceClient
+import com.dundermifflin.gateway.infrastructure.client.WuphfServiceClient
 import com.dundermifflin.gateway.infrastructure.security.OidcService
 import jakarta.servlet.http.HttpServletRequest
 import org.springframework.http.HttpHeaders
@@ -34,7 +35,8 @@ class GatewayController(
     private val oidcService: OidcService,
     private val gatewayProperties: GatewayProperties,
     private val orderServiceClient: OrderServiceClient,
-    private val financeServiceClient: FinanceServiceClient
+    private val financeServiceClient: FinanceServiceClient,
+    private val wuphfServiceClient: WuphfServiceClient
 ) {
     @GetMapping("/oauth2/authorization/keycloak")
     fun oauthStart(
@@ -290,6 +292,30 @@ class GatewayController(
         )
     }
 
+    @GetMapping("/api/v1/notifications", produces = [MediaType.APPLICATION_JSON_VALUE])
+    fun listNotifications(
+        request: HttpServletRequest,
+        @RequestParam(name = "unreadOnly", required = false) unreadOnly: Boolean?
+    ): ResponseEntity<Any> {
+        val session = requireAuthenticatedSession(request) ?: return unauthenticatedOnly()
+        val query = unreadOnly?.let { "?unreadOnly=$it" } ?: ""
+        return forwardWuphfJsonResponse("/internal/notifications$query", "GET", session.userId)
+    }
+
+    @PostMapping("/api/v1/notifications/{notificationId}/read", produces = [MediaType.APPLICATION_JSON_VALUE])
+    fun markNotificationRead(
+        request: HttpServletRequest,
+        @PathVariable notificationId: String
+    ): ResponseEntity<Any> {
+        val session = requireAuthenticatedSession(request) ?: return unauthenticatedOnly()
+        return forwardWuphfJsonResponse(
+            "/internal/notifications/${encodePath(notificationId)}/read",
+            "POST",
+            session.userId,
+            body = ""
+        )
+    }
+
     @GetMapping("/api/v1/warehouse/shipments", produces = [MediaType.APPLICATION_JSON_VALUE])
     fun listShipments(
         request: HttpServletRequest,
@@ -354,12 +380,35 @@ class GatewayController(
               <body>
                 <h1>Dunder Mifflin Gateway</h1>
                 $authNotice
+                <p><a href="/portal">Open Scranton Portal</a></p>
                 <p><a href="/infinity">Open Sales App (Infinity)</a></p>
                 <p><a href="/accounting">Open Accounting App</a></p>
               </body>
             </html>
             """.trimIndent()
         )
+    }
+
+    @GetMapping("/apps/portal")
+    fun portalShortcut(): ResponseEntity<Void> = ResponseEntity.status(HttpStatus.FOUND)
+        .header(HttpHeaders.LOCATION, "/portal")
+        .build()
+
+    @GetMapping("/portal")
+    fun portal(request: HttpServletRequest): ResponseEntity<*> {
+        val querySuffix = requestQuerySuffix(request)
+        val session = sessionService.readSession(request)?.second
+        if (session == null) {
+            val returnTo = URLEncoder.encode("/portal$querySuffix", StandardCharsets.UTF_8)
+            return ResponseEntity.status(HttpStatus.FOUND)
+                .header(HttpHeaders.LOCATION, "/oauth2/authorization/keycloak?returnTo=$returnTo")
+                .build<Void>()
+        }
+
+        return ResponseEntity.status(HttpStatus.FOUND)
+            .header(HttpHeaders.CACHE_CONTROL, "no-store")
+            .header(HttpHeaders.LOCATION, portalWebLocation(querySuffix))
+            .build<Void>()
     }
 
     @GetMapping("/apps/infinity")
@@ -369,9 +418,10 @@ class GatewayController(
 
     @GetMapping("/infinity")
     fun infinity(request: HttpServletRequest): ResponseEntity<*> {
+        val querySuffix = requestQuerySuffix(request)
         val session = sessionService.readSession(request)?.second
         if (session == null) {
-            val returnTo = URLEncoder.encode("/infinity", StandardCharsets.UTF_8)
+            val returnTo = URLEncoder.encode("/infinity$querySuffix", StandardCharsets.UTF_8)
             return ResponseEntity.status(HttpStatus.FOUND)
                 .header(HttpHeaders.LOCATION, "/oauth2/authorization/keycloak?returnTo=$returnTo")
                 .build<Void>()
@@ -383,7 +433,7 @@ class GatewayController(
 
         return ResponseEntity.status(HttpStatus.FOUND)
             .header(HttpHeaders.CACHE_CONTROL, "no-store")
-            .header(HttpHeaders.LOCATION, infinityWebLocation())
+            .header(HttpHeaders.LOCATION, infinityWebLocation(querySuffix))
             .build<Void>()
     }
 
@@ -394,9 +444,10 @@ class GatewayController(
 
     @GetMapping("/accounting")
     fun accounting(request: HttpServletRequest): ResponseEntity<*> {
+        val querySuffix = requestQuerySuffix(request)
         val session = sessionService.readSession(request)?.second
         if (session == null) {
-            val returnTo = URLEncoder.encode("/accounting", StandardCharsets.UTF_8)
+            val returnTo = URLEncoder.encode("/accounting$querySuffix", StandardCharsets.UTF_8)
             return ResponseEntity.status(HttpStatus.FOUND)
                 .header(HttpHeaders.LOCATION, "/oauth2/authorization/keycloak?returnTo=$returnTo")
                 .build<Void>()
@@ -408,18 +459,31 @@ class GatewayController(
 
         return ResponseEntity.status(HttpStatus.FOUND)
             .header(HttpHeaders.CACHE_CONTROL, "no-store")
-            .header(HttpHeaders.LOCATION, accountingWebLocation())
+            .header(HttpHeaders.LOCATION, accountingWebLocation(querySuffix))
             .build<Void>()
     }
 
-    private fun infinityWebLocation(): String {
-        val base = gatewayProperties.infinityWebBaseUrl.trim().ifBlank { "http://localhost:3001" }
-        return if (base.endsWith('/')) base else "$base/"
+    private fun requestQuerySuffix(request: HttpServletRequest): String {
+        val raw = request.queryString?.trim().orEmpty()
+        return if (raw.isBlank()) "" else "?$raw"
     }
 
-    private fun accountingWebLocation(): String {
+    private fun portalWebLocation(querySuffix: String = ""): String {
+        val base = gatewayProperties.portalWebBaseUrl.trim().ifBlank { "http://localhost:3000" }
+        val rooted = if (base.endsWith('/')) base else "$base/"
+        return "$rooted$querySuffix"
+    }
+
+    private fun infinityWebLocation(querySuffix: String = ""): String {
+        val base = gatewayProperties.infinityWebBaseUrl.trim().ifBlank { "http://localhost:3001" }
+        val rooted = if (base.endsWith('/')) base else "$base/"
+        return "$rooted$querySuffix"
+    }
+
+    private fun accountingWebLocation(querySuffix: String = ""): String {
         val base = gatewayProperties.accountingWebBaseUrl.trim().ifBlank { "http://localhost:3002" }
-        return if (base.endsWith('/')) base else "$base/"
+        val rooted = if (base.endsWith('/')) base else "$base/"
+        return "$rooted$querySuffix"
     }
 
     private fun htmlResponse(status: HttpStatus, html: String): ResponseEntity<String> =
@@ -431,6 +495,10 @@ class GatewayController(
     private fun requireSalesSession(request: HttpServletRequest): GatewaySession? {
         val session = sessionService.readSession(request)?.second ?: return null
         return session.takeIf { canAccessOrders(it.roles) }
+    }
+
+    private fun requireAuthenticatedSession(request: HttpServletRequest): GatewaySession? {
+        return sessionService.readSession(request)?.second
     }
 
     private fun requireAccountingSession(request: HttpServletRequest): GatewaySession? {
@@ -521,6 +589,17 @@ class GatewayController(
         }
     }
 
+    private fun unauthenticatedOnly(): ResponseEntity<Any> {
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(
+            mapOf(
+                "error" to mapOf(
+                    "code" to "UNAUTHENTICATED",
+                    "message" to "Login is required"
+                )
+            )
+        )
+    }
+
     private fun canAccessOrders(roles: List<String>): Boolean {
         return roles.any { it == "sales-associate" || it == "manager" }
     }
@@ -553,6 +632,18 @@ class GatewayController(
         body: String? = null
     ): ResponseEntity<Any> {
         val forwarded = financeServiceClient.forward(pathAndQuery, method, userId, body)
+        return ResponseEntity.status(forwarded.statusCode)
+            .headers(forwarded.headers)
+            .body(forwarded.body ?: "")
+    }
+
+    private fun forwardWuphfJsonResponse(
+        pathAndQuery: String,
+        method: String,
+        userId: String,
+        body: String? = null
+    ): ResponseEntity<Any> {
+        val forwarded = wuphfServiceClient.forward(pathAndQuery, method, userId, body)
         return ResponseEntity.status(forwarded.statusCode)
             .headers(forwarded.headers)
             .body(forwarded.body ?: "")

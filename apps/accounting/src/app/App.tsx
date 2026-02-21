@@ -12,6 +12,7 @@ import {
   fetchAuthMe,
   listExpenses
 } from "../shared/api";
+import { WuphfWidget } from "../shared/WuphfWidget";
 
 type SessionState =
   | { status: "loading" }
@@ -42,6 +43,21 @@ function defaultExpenseForm(userId: string): ExpenseFormState {
     description: "Core Blaster Extreme",
     receiptUrl: "https://example.invalid/receipt/123"
   };
+}
+
+function syncExpenseIdQuery(expenseId: string) {
+  if (typeof window === "undefined") {
+    return;
+  }
+
+  const url = new URL(window.location.href);
+  if (expenseId.trim()) {
+    url.searchParams.set("expenseId", expenseId.trim());
+  } else {
+    url.searchParams.delete("expenseId");
+  }
+
+  window.history.replaceState({}, "", `${url.pathname}${url.search}`);
 }
 
 export function App() {
@@ -104,7 +120,16 @@ export function App() {
 
         setSession({ status: "ready", user: auth });
         setForm(defaultExpenseForm(auth.userId));
-        await refreshExpenses("PENDING");
+
+        const deepLinkedExpenseId = new URLSearchParams(window.location.search).get("expenseId")?.trim();
+        if (deepLinkedExpenseId) {
+          setStatusFilter("ALL");
+          await refreshExpenses("ALL");
+          setSelectedExpenseId(deepLinkedExpenseId);
+          syncExpenseIdQuery(deepLinkedExpenseId);
+        } else {
+          await refreshExpenses("PENDING");
+        }
       } catch (error) {
         if (!active) {
           return;
@@ -154,6 +179,7 @@ export function App() {
       setStatusFilter("PENDING");
       await refreshExpenses("PENDING");
       setSelectedExpenseId(created.expenseId);
+      syncExpenseIdQuery(created.expenseId);
     } catch (error) {
       setErrorMessage(error instanceof Error ? error.message : "Unable to create expense");
     }
@@ -188,6 +214,7 @@ export function App() {
       setNoticeMessage(`Expense ${updated.expenseId} updated to ${updated.status}.`);
       await refreshExpenses(statusFilter);
       setSelectedExpenseId(updated.expenseId);
+      syncExpenseIdQuery(updated.expenseId);
     } catch (error) {
       setErrorMessage(error instanceof Error ? error.message : "Unable to apply expense decision");
     }
@@ -234,6 +261,9 @@ export function App() {
 
   return (
     <main className="wrap">
+      <section className="widget-row">
+        <WuphfWidget returnTo="/accounting" />
+      </section>
       <h1>Accounting Suite (PR6)</h1>
       <p>
         Welcome, <strong>{session.user.displayName}</strong>. Roles: {session.user.roles.join(", ")}
@@ -367,7 +397,10 @@ export function App() {
                   <button
                     type="button"
                     data-testid={`accounting-select-${expense.expenseId}`}
-                    onClick={() => setSelectedExpenseId(expense.expenseId)}
+                    onClick={() => {
+                      setSelectedExpenseId(expense.expenseId);
+                      syncExpenseIdQuery(expense.expenseId);
+                    }}
                   >
                     Select
                   </button>

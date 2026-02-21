@@ -50,7 +50,7 @@ This roadmap breaks work into sequential PRs. Each PR is sized to be reviewable 
 | PR4 | `tests/e2e/specs/warehouse-dispatch.spec.ts` |
 | PR5 | `tests/e2e/specs/sales-order-timeline.spec.ts` |
 | PR6 | `tests/e2e/specs/accounting-expense-decision.spec.ts` |
-| PR7 | Planned: notification widget cross-app behavior spec |
+| PR7 | `tests/e2e/specs/wuphf-notification-widget.spec.ts` |
 | PR8 | Planned: offline replay/idempotency spec |
 | PR9 | Planned: reliability/error-state regression spec |
 | PR10 | Aggregated golden-path CI gate over all required specs |

@@ -24,6 +24,12 @@ body {
   margin-bottom: 1rem;
 }
 
+.widget-row {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 0.5rem;
+}
+
 .row {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));

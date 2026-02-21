@@ -181,6 +181,8 @@ services:
         condition: service_healthy
       finance-service:
         condition: service_healthy
+      wuphf-service:
+        condition: service_healthy
     environment:
       SERVICE_NAME: gateway
       SERVER_PORT: 8081
@@ -191,6 +193,8 @@ services:
       OIDC_CLIENT_SECRET: gateway-secret-change-me
       ORDER_SERVICE_BASE_URL: http://order-service:8093
       FINANCE_SERVICE_BASE_URL: http://finance-service:8095
+      WUPHF_SERVICE_BASE_URL: http://wuphf-service:8096
+      PORTAL_WEB_BASE_URL: http://host.docker.internal:${PORTAL_WEB_PORT:-3000}
       INFINITY_WEB_BASE_URL: http://host.docker.internal:${INFINITY_WEB_PORT:-3001}
       ACCOUNTING_WEB_BASE_URL: http://host.docker.internal:${ACCOUNTING_WEB_PORT:-3002}
       MOBILE_WEB_ORIGINS: http://localhost:${INFINITY_WEB_PORT:-3001},http://host.docker.internal:${INFINITY_WEB_PORT:-3001},http://localhost:${ACCOUNTING_WEB_PORT:-3002},http://host.docker.internal:${ACCOUNTING_WEB_PORT:-3002},http://localhost:${WAREHOUSE_MOBILE_PORT:-3004},http://host.docker.internal:${WAREHOUSE_MOBILE_PORT:-3004}
@@ -339,8 +343,26 @@ services:
     environment:
       SERVICE_NAME: wuphf-service
       SERVER_PORT: 8096
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: 5432
+      POSTGRES_DB: ${POSTGRES_DB:-dundermifflin}
+      POSTGRES_USER: ${POSTGRES_USER:-dundermifflin}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-bears_beets_battlestar}
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_AMQP_PORT: 5672
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_DEFAULT_USER:-dunder}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_DEFAULT_PASS:-mifflin}
+      RABBITMQ_VHOST: /
+      RABBITMQ_EXCHANGE: dm.domain.events
     ports:
       - "${WUPHF_SERVICE_PORT:-8096}:8096"
+    healthcheck:
+      test:
+        ["CMD-SHELL", "curl -fsS http://127.0.0.1:8096/actuator/health >/dev/null || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 20
+      start_period: 5s
     networks: [dmf]
 
   portal-web:
@@ -497,6 +519,7 @@ services:
         ready=0; for i in $(seq 1 90); do if curl -fsS "$${PLAYWRIGHT_WAREHOUSE_BASE_URL}/" >/dev/null 2>&1; then ready=1; break; fi; sleep 2; done; [ "$$ready" -eq 1 ] &&
         ready=0; for i in $(seq 1 90); do if curl -fsS "$${PLAYWRIGHT_INFINITY_BASE_URL}/" >/dev/null 2>&1; then ready=1; break; fi; sleep 2; done; [ "$$ready" -eq 1 ] &&
         ready=0; for i in $(seq 1 90); do if curl -fsS "$${PLAYWRIGHT_ACCOUNTING_BASE_URL}/" >/dev/null 2>&1; then ready=1; break; fi; sleep 2; done; [ "$$ready" -eq 1 ] &&
+        ready=0; for i in $(seq 1 90); do if curl -fsS "$${PLAYWRIGHT_WUPHF_WIDGET_BASE_URL}/wuphf-widget.js" >/dev/null 2>&1; then ready=1; break; fi; sleep 2; done; [ "$$ready" -eq 1 ] &&
         pnpm config set store-dir /pnpm-store &&
         pnpm install --no-frozen-lockfile &&
         pnpm test:e2e:smoke
@@ -506,6 +529,7 @@ services:
       PLAYWRIGHT_WAREHOUSE_BASE_URL: http://host.docker.internal:${WAREHOUSE_MOBILE_PORT:-3004}
       PLAYWRIGHT_INFINITY_BASE_URL: http://host.docker.internal:${INFINITY_WEB_PORT:-3001}
       PLAYWRIGHT_ACCOUNTING_BASE_URL: http://host.docker.internal:${ACCOUNTING_WEB_PORT:-3002}
+      PLAYWRIGHT_WUPHF_WIDGET_BASE_URL: http://host.docker.internal:${WUPHF_WIDGET_PORT:-3003}
     extra_hosts:
       - host.docker.internal:host-gateway
     volumes:
