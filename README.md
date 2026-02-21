@@ -47,10 +47,12 @@ This repository contains the implementation plan and delivery docs for a demo ER
 
 ## Current State
 
-- PR1 baseline is complete for local infra/auth setup and portal role-aware navigation.
-- PR2 Sales app access flow through gateway + Keycloak is implemented and covered by Playwright E2E.
-- PR3 order placement is implemented in Infinity with gateway `/api/v1/orders` integration, Postgres persistence, and RabbitMQ order-created events.
-- Planning/specification docs remain the source of truth for roadmap and contracts.
+- PR1-PR8 are implemented locally, including auth/navigation, sales order flow + timeline, warehouse mobile, accounting approvals, WUPHF notifications, and warehouse offline replay.
+- Frontends in active use: `apps/portal`, `apps/infinity`, `apps/accounting`, `apps/warehouse-mobile`, and `apps/wuphf-widget` (embedded).
+- Backends in active use: `services/gateway`, `services/order-service`, `services/inventory-service`, `services/finance-service`, and `services/wuphf-service`.
+- Warehouse shipment API ownership is now in `services/inventory-service`, with `services/order-service` consuming `shipment.dispatched.v1` to keep order status/timeline in sync.
+- Playwright smoke coverage currently includes PR2-PR8 specs.
+- Roadmap/contracts docs remain the source of truth for remaining scope (PR9+).
 
 ## Quickstart (Docker-Only)
 
@@ -67,6 +69,6 @@ docker compose --profile test run --rm unit-tests
 # run order-service integration tests (postgres + rabbitmq adapters)
 docker compose --profile test run --rm order-service-integration-tests
 
-# run Playwright smoke suite (PR2 auth + PR3 order placement)
+# run Playwright smoke suite (current PR2-PR8 coverage)
 docker compose --profile test run --rm e2e-tests
 ```
