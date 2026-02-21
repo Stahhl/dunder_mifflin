@@ -6,6 +6,7 @@ import com.dundermifflin.gateway.domain.service.SessionService
 import com.dundermifflin.gateway.infrastructure.client.FinanceServiceClient
 import com.dundermifflin.gateway.infrastructure.client.InventoryServiceClient
 import com.dundermifflin.gateway.infrastructure.client.OrderServiceClient
+import com.dundermifflin.gateway.infrastructure.client.ProfileServiceClient
 import com.dundermifflin.gateway.infrastructure.client.SalesServiceClient
 import com.dundermifflin.gateway.infrastructure.client.WuphfServiceClient
 import com.dundermifflin.gateway.infrastructure.observability.REQUEST_ID_ATTR
@@ -44,6 +45,7 @@ class GatewayController(
     private val sessionService: SessionService,
     private val oidcService: OidcService,
     private val gatewayProperties: GatewayProperties,
+    private val profileServiceClient: ProfileServiceClient,
     private val salesServiceClient: SalesServiceClient,
     private val orderServiceClient: OrderServiceClient,
     private val inventoryServiceClient: InventoryServiceClient,
@@ -162,6 +164,27 @@ class GatewayController(
                 "apps" to apps,
                 "sessionExpiresAt" to java.time.Instant.ofEpochMilli(session.expiresAtEpochMs).toString()
             )
+        )
+    }
+
+    @GetMapping("/api/v1/profile/me", produces = [MediaType.APPLICATION_JSON_VALUE])
+    fun getProfile(request: HttpServletRequest): ResponseEntity<Any> {
+        val session = requireAuthenticatedSession(request) ?: return unauthenticatedOnly()
+        return forwardProfileJsonResponse("/internal/profile/me", "GET", session.userId, session.displayName)
+    }
+
+    @PostMapping("/api/v1/profile/me", produces = [MediaType.APPLICATION_JSON_VALUE])
+    fun updateProfile(
+        request: HttpServletRequest,
+        @RequestBody(required = false) body: String?
+    ): ResponseEntity<Any> {
+        val session = requireAuthenticatedSession(request) ?: return unauthenticatedOnly()
+        return forwardProfileJsonResponse(
+            "/internal/profile/me",
+            "POST",
+            session.userId,
+            session.displayName,
+            body ?: ""
         )
     }
 
@@ -720,6 +743,26 @@ class GatewayController(
             userId,
             body,
             currentRequestTraceHeaders() + additionalHeaders
+        )
+        return ResponseEntity.status(forwarded.statusCode)
+            .headers(forwarded.headers)
+            .body(forwarded.body ?: "")
+    }
+
+    private fun forwardProfileJsonResponse(
+        pathAndQuery: String,
+        method: String,
+        userId: String,
+        displayName: String,
+        body: String? = null
+    ): ResponseEntity<Any> {
+        val forwarded = profileServiceClient.forward(
+            pathAndQuery,
+            method,
+            userId,
+            displayName,
+            body,
+            currentRequestTraceHeaders()
         )
         return ResponseEntity.status(forwarded.statusCode)
             .headers(forwarded.headers)

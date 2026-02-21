@@ -86,6 +86,10 @@ pnpm test:e2e:gate
 - Sales user creates lead, marks it qualified, converts it to client.
 - Converted client ID is usable in downstream order placement.
 
+9. Portal profile/preferences persistence:
+- User updates profile fields and default app preference in Portal settings.
+- Updated preferences persist across refresh and are honored after re-login.
+
 ## 5. Required Structure
 
 ```text
@@ -105,7 +109,8 @@ tests/e2e/
 │   ├── wuphf-notification-widget.spec.ts
 │   ├── warehouse-offline-sync.spec.ts
 │   ├── reliability-error-state.spec.ts
-│   └── infinity-crm-client-conversion.spec.ts
+│   ├── infinity-crm-client-conversion.spec.ts
+│   └── portal-profile-preferences.spec.ts
 ├── scripts/
 │   └── check-flake-rate.mjs
 └── utils/

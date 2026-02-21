@@ -58,20 +58,33 @@ export function PortalShell({ user, visibleApps, children }: PortalShellProps) {
 
       <div className="portal-layout">
         <aside className="portal-nav" aria-label="App navigation">
-          <h2>Available apps</h2>
-          <ul>
-            {visibleApps.map((app) => (
-              <li key={app.id}>
-                <NavLink
-                  to={getPortalRoute(app.id)}
-                  className={({ isActive }) => (isActive ? "is-active" : "")}
-                  end={app.id === "portal"}
-                >
-                  {app.label}
+          <section className="portal-nav-section">
+            <h2>Available apps</h2>
+            <ul>
+              {visibleApps.map((app) => (
+                <li key={app.id}>
+                  <NavLink
+                    to={getPortalRoute(app.id)}
+                    className={({ isActive }) => (isActive ? "is-active" : "")}
+                    end={app.id === "portal"}
+                  >
+                    {app.label}
+                  </NavLink>
+                </li>
+              ))}
+            </ul>
+          </section>
+
+          <section className="portal-nav-section">
+            <h2>Settings</h2>
+            <ul>
+              <li>
+                <NavLink to="/settings/profile" className={({ isActive }) => (isActive ? "is-active" : "")}>
+                  Profile &amp; preferences
                 </NavLink>
               </li>
-            ))}
-          </ul>
+            </ul>
+          </section>
         </aside>
 
         <main className="portal-main">{children}</main>

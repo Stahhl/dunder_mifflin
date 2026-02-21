@@ -57,7 +57,7 @@ This roadmap breaks work into sequential PRs. Each PR is sized to be reviewable 
 | PR9 | `tests/e2e/specs/reliability-error-state.spec.ts` |
 | PR10 | `.github/workflows/pr10-golden-path-gate.yml` + `pnpm test:e2e:gate` aggregate gate |
 | PR11 | `tests/e2e/specs/infinity-crm-client-conversion.spec.ts` |
-| PR12 | `tests/e2e/specs/portal-profile-preferences.spec.ts` (planned) |
+| PR12 | `tests/e2e/specs/portal-profile-preferences.spec.ts` |
 
 ## PR 1: Platform Login + App Navigation Shell
 **User-visible outcome:** Users can sign in and navigate from one central portal to each department app.

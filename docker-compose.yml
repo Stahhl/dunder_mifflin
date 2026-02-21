@@ -177,6 +177,8 @@ services:
         condition: service_healthy
       keycloak-seed:
         condition: service_completed_successfully
+      profile-service:
+        condition: service_healthy
       sales-service:
         condition: service_healthy
       order-service:
@@ -195,6 +197,7 @@ services:
       KEYCLOAK_PUBLIC_PORT: ${KEYCLOAK_PORT:-8080}
       OIDC_CLIENT_ID: dunder-mifflin-gateway
       OIDC_CLIENT_SECRET: gateway-secret-change-me
+      PROFILE_SERVICE_BASE_URL: http://profile-service:8091
       SALES_SERVICE_BASE_URL: http://sales-service:8092
       ORDER_SERVICE_BASE_URL: http://order-service:8093
       INVENTORY_SERVICE_BASE_URL: http://inventory-service:8094
@@ -203,7 +206,7 @@ services:
       PORTAL_WEB_BASE_URL: http://host.docker.internal:${PORTAL_WEB_PORT:-3000}
       INFINITY_WEB_BASE_URL: http://host.docker.internal:${INFINITY_WEB_PORT:-3001}
       ACCOUNTING_WEB_BASE_URL: http://host.docker.internal:${ACCOUNTING_WEB_PORT:-3002}
-      MOBILE_WEB_ORIGINS: http://localhost:${INFINITY_WEB_PORT:-3001},http://host.docker.internal:${INFINITY_WEB_PORT:-3001},http://localhost:${ACCOUNTING_WEB_PORT:-3002},http://host.docker.internal:${ACCOUNTING_WEB_PORT:-3002},http://localhost:${WAREHOUSE_MOBILE_PORT:-3004},http://host.docker.internal:${WAREHOUSE_MOBILE_PORT:-3004}
+      MOBILE_WEB_ORIGINS: http://localhost:${PORTAL_WEB_PORT:-3000},http://host.docker.internal:${PORTAL_WEB_PORT:-3000},http://localhost:${INFINITY_WEB_PORT:-3001},http://host.docker.internal:${INFINITY_WEB_PORT:-3001},http://localhost:${ACCOUNTING_WEB_PORT:-3002},http://host.docker.internal:${ACCOUNTING_WEB_PORT:-3002},http://localhost:${WAREHOUSE_MOBILE_PORT:-3004},http://host.docker.internal:${WAREHOUSE_MOBILE_PORT:-3004}
     ports:
       - "${GATEWAY_PORT:-8081}:8081"
     healthcheck:
@@ -229,8 +232,26 @@ services:
     environment:
       SERVICE_NAME: profile-service
       SERVER_PORT: 8091
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: 5432
+      POSTGRES_DB: ${POSTGRES_DB:-dundermifflin}
+      POSTGRES_USER: ${POSTGRES_USER:-dundermifflin}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-bears_beets_battlestar}
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_AMQP_PORT: 5672
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_DEFAULT_USER:-dunder}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_DEFAULT_PASS:-mifflin}
+      RABBITMQ_VHOST: /
+      RABBITMQ_EXCHANGE: dm.domain.events
     ports:
       - "${PROFILE_SERVICE_PORT:-8091}:8091"
+    healthcheck:
+      test:
+        ["CMD-SHELL", "curl -fsS http://127.0.0.1:8091/actuator/health >/dev/null || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 20
+      start_period: 5s
     networks: [dmf]
 
   sales-service:

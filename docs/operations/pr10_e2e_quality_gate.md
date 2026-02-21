@@ -36,3 +36,4 @@ The checker reads `test-results/playwright-results.json`, computes flaky rate, w
 - `tests/e2e/specs/warehouse-offline-sync.spec.ts`
 - `tests/e2e/specs/reliability-error-state.spec.ts`
 - `tests/e2e/specs/infinity-crm-client-conversion.spec.ts`
+- `tests/e2e/specs/portal-profile-preferences.spec.ts`

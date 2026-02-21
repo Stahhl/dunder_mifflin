@@ -1,0 +1,38 @@
+server:
+  port: ${SERVER_PORT:8091}
+
+spring:
+  application:
+    name: profile-service
+  threads:
+    virtual:
+      enabled: true
+  datasource:
+    url: jdbc:postgresql://${POSTGRES_HOST:postgres}:${POSTGRES_PORT:5432}/${POSTGRES_DB:dundermifflin}
+    username: ${POSTGRES_USER:dundermifflin}
+    password: ${POSTGRES_PASSWORD:bears_beets_battlestar}
+  flyway:
+    enabled: true
+    default-schema: profile
+    baseline-on-migrate: true
+    locations: classpath:db/migration
+  rabbitmq:
+    host: ${RABBITMQ_HOST:rabbitmq}
+    port: ${RABBITMQ_AMQP_PORT:5672}
+    username: ${RABBITMQ_DEFAULT_USER:dunder}
+    password: ${RABBITMQ_DEFAULT_PASS:mifflin}
+    virtual-host: ${RABBITMQ_VHOST:/}
+
+profile:
+  messaging:
+    exchange: ${RABBITMQ_EXCHANGE:dm.domain.events}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,prometheus
+  endpoint:
+    health:
+      probes:
+        enabled: true
