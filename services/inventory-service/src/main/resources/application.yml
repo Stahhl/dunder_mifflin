@@ -1,9 +1,9 @@
 server:
-  port: ${SERVER_PORT:8093}
+  port: ${SERVER_PORT:8094}
 
 spring:
   application:
-    name: order-service
+    name: inventory-service
   threads:
     virtual:
       enabled: true
@@ -13,7 +13,7 @@ spring:
     password: ${POSTGRES_PASSWORD:bears_beets_battlestar}
   flyway:
     enabled: true
-    default-schema: orders
+    default-schema: inventory
     baseline-on-migrate: true
     locations: classpath:db/migration
   rabbitmq:
@@ -23,9 +23,10 @@ spring:
     password: ${RABBITMQ_DEFAULT_PASS:mifflin}
     virtual-host: ${RABBITMQ_VHOST:/}
 
-order:
-  exchange: ${RABBITMQ_EXCHANGE:dm.domain.events}
-  inventory-events-queue: ${ORDER_INVENTORY_EVENTS_QUEUE:order.inventory-events.q}
+inventory:
+  messaging:
+    exchange: ${RABBITMQ_EXCHANGE:dm.domain.events}
+    order-events-queue: ${INVENTORY_ORDER_EVENTS_QUEUE:inventory.order-events.q}
 
 management:
   endpoints:

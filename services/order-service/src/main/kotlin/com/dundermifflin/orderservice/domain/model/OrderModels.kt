@@ -85,3 +85,9 @@ data class DispatchShipmentResult(
     val dispatchedAt: Instant,
     val alreadyDispatched: Boolean
 )
+
+data class ApplyShipmentDispatchedCommand(
+    val shipmentId: String,
+    val orderId: String,
+    val dispatchedAt: Instant
+)

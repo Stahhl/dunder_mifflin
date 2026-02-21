@@ -4,5 +4,6 @@ import org.springframework.boot.context.properties.ConfigurationProperties
 
 @ConfigurationProperties(prefix = "order")
 data class OrderMessagingProperties(
-    val exchange: String = "dm.domain.events"
+    val exchange: String = "dm.domain.events",
+    val inventoryEventsQueue: String = "order.inventory-events.q"
 )

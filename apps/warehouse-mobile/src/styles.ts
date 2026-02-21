@@ -58,6 +58,9 @@ export const styles = StyleSheet.create({
     color: "#1d4ed8",
     fontWeight: "700"
   },
+  buttonDisabled: {
+    opacity: 0.45
+  },
   ghostButton: {
     borderColor: "#94a3b8",
     borderWidth: 1,

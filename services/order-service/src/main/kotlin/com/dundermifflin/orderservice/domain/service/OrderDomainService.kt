@@ -1,5 +1,6 @@
 package com.dundermifflin.orderservice.domain.service
 
+import com.dundermifflin.orderservice.domain.model.ApplyShipmentDispatchedCommand
 import com.dundermifflin.orderservice.domain.model.CreateOrderCommand
 import com.dundermifflin.orderservice.domain.model.DispatchShipmentCommand
 import com.dundermifflin.orderservice.domain.model.DispatchShipmentResult
@@ -75,5 +76,13 @@ class OrderDomainService(
         }
 
         return dispatched
+    }
+
+    override fun applyShipmentDispatched(command: ApplyShipmentDispatchedCommand): Boolean {
+        return orderRepositoryPort.applyShipmentDispatchedEvent(
+            orderId = command.orderId,
+            shipmentId = command.shipmentId,
+            dispatchedAt = command.dispatchedAt
+        )
     }
 }

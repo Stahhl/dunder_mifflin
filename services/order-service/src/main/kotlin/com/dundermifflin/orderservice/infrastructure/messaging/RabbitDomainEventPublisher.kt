@@ -36,6 +36,7 @@ class RabbitDomainEventPublisher(
             "data" to mapOf(
                 "orderId" to order.orderId,
                 "clientId" to order.clientId,
+                "requestedShipDate" to order.requestedShipDate.toString(),
                 "items" to order.items,
                 "createdBy" to order.createdBy,
                 "createdAt" to occurredAt.toString()

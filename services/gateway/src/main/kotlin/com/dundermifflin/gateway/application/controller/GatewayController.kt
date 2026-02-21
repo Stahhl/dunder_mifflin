@@ -4,6 +4,7 @@ import com.dundermifflin.gateway.application.dto.GatewayProperties
 import com.dundermifflin.gateway.domain.model.GatewaySession
 import com.dundermifflin.gateway.domain.service.SessionService
 import com.dundermifflin.gateway.infrastructure.client.FinanceServiceClient
+import com.dundermifflin.gateway.infrastructure.client.InventoryServiceClient
 import com.dundermifflin.gateway.infrastructure.client.OrderServiceClient
 import com.dundermifflin.gateway.infrastructure.client.WuphfServiceClient
 import com.dundermifflin.gateway.infrastructure.security.OidcService
@@ -35,6 +36,7 @@ class GatewayController(
     private val oidcService: OidcService,
     private val gatewayProperties: GatewayProperties,
     private val orderServiceClient: OrderServiceClient,
+    private val inventoryServiceClient: InventoryServiceClient,
     private val financeServiceClient: FinanceServiceClient,
     private val wuphfServiceClient: WuphfServiceClient
 ) {
@@ -323,21 +325,24 @@ class GatewayController(
     ): ResponseEntity<Any> {
         val principal = requireWarehousePrincipal(request) ?: return mobileUnauthOrForbidden(request)
         val query = status?.takeIf { it.isNotBlank() }?.let { "?status=${encodePath(it)}" } ?: ""
-        return forwardJsonResponse("/internal/shipments$query", "GET", principal.userId)
+        return forwardInventoryJsonResponse("/internal/shipments$query", "GET", principal.userId)
     }
 
     @PostMapping("/api/v1/warehouse/shipments/{shipmentId}/scan", produces = [MediaType.APPLICATION_JSON_VALUE])
     fun scanShipment(
         request: HttpServletRequest,
         @PathVariable shipmentId: String,
-        @RequestBody(required = false) body: String?
+        @RequestBody(required = false) body: String?,
+        @RequestHeader(name = "Idempotency-Key", required = false) idempotencyKey: String?
     ): ResponseEntity<Any> {
         val principal = requireWarehousePrincipal(request) ?: return mobileUnauthOrForbidden(request)
-        return forwardJsonResponse(
+        val headers = idempotencyKey?.takeIf { it.isNotBlank() }?.let { mapOf("Idempotency-Key" to it) } ?: emptyMap()
+        return forwardInventoryJsonResponse(
             "/internal/shipments/${encodePath(shipmentId)}/scan",
             "POST",
             principal.userId,
-            body ?: ""
+            body ?: "",
+            headers
         )
     }
 
@@ -350,7 +355,7 @@ class GatewayController(
     ): ResponseEntity<Any> {
         val principal = requireWarehousePrincipal(request) ?: return mobileUnauthOrForbidden(request)
         val headers = idempotencyKey?.takeIf { it.isNotBlank() }?.let { mapOf("Idempotency-Key" to it) } ?: emptyMap()
-        return forwardJsonResponse(
+        return forwardInventoryJsonResponse(
             "/internal/shipments/${encodePath(shipmentId)}/dispatch",
             "POST",
             principal.userId,
@@ -632,6 +637,19 @@ class GatewayController(
         body: String? = null
     ): ResponseEntity<Any> {
         val forwarded = financeServiceClient.forward(pathAndQuery, method, userId, body)
+        return ResponseEntity.status(forwarded.statusCode)
+            .headers(forwarded.headers)
+            .body(forwarded.body ?: "")
+    }
+
+    private fun forwardInventoryJsonResponse(
+        pathAndQuery: String,
+        method: String,
+        userId: String,
+        body: String? = null,
+        additionalHeaders: Map<String, String> = emptyMap()
+    ): ResponseEntity<Any> {
+        val forwarded = inventoryServiceClient.forward(pathAndQuery, method, userId, body, additionalHeaders)
         return ResponseEntity.status(forwarded.statusCode)
             .headers(forwarded.headers)
             .body(forwarded.body ?: "")

@@ -31,3 +31,34 @@ export type RuntimeConfig = {
   realm: string;
   clientId: string;
 };
+
+export type OfflineScanPayload = {
+  barcode: string;
+  quantity: number;
+  scannedAt: string;
+};
+
+export type OfflineDispatchPayload = {
+  truckId: string;
+  dispatchedAt: string;
+};
+
+export type OfflineOperation =
+  | {
+      operationId: string;
+      kind: "scan";
+      shipmentId: string;
+      idempotencyKey: string;
+      createdAt: string;
+      attempts: number;
+      payload: OfflineScanPayload;
+    }
+  | {
+      operationId: string;
+      kind: "dispatch";
+      shipmentId: string;
+      idempotencyKey: string;
+      createdAt: string;
+      attempts: number;
+      payload: OfflineDispatchPayload;
+    };

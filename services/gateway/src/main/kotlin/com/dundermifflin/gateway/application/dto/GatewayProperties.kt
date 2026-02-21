@@ -10,6 +10,7 @@ data class GatewayProperties(
     val oidcClientId: String = "dunder-mifflin-gateway",
     val oidcClientSecret: String = "gateway-secret-change-me",
     val orderServiceBaseUrl: String = "http://order-service:8093",
+    val inventoryServiceBaseUrl: String = "http://inventory-service:8094",
     val financeServiceBaseUrl: String = "http://finance-service:8095",
     val wuphfServiceBaseUrl: String = "http://wuphf-service:8096",
     val mobileWebOrigins: String =

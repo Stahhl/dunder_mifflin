@@ -24,14 +24,16 @@ export async function submitMockScan(
   accessToken: string,
   shipmentId: string,
   barcode: string,
-  quantity: number
+  quantity: number,
+  idempotencyKey?: string
 ): Promise<void> {
   const response = await fetch(`${gatewayBaseUrl}/api/v1/warehouse/shipments/${encodeURIComponent(shipmentId)}/scan`, {
     method: "POST",
     headers: {
       authorization: `Bearer ${accessToken}`,
       "content-type": "application/json",
-      accept: "application/json"
+      accept: "application/json",
+      ...(idempotencyKey ? { "Idempotency-Key": idempotencyKey } : {})
     },
     body: JSON.stringify({
       barcode,
@@ -54,9 +56,12 @@ export async function dispatchShipment(
   gatewayBaseUrl: string,
   accessToken: string,
   shipmentId: string,
-  truckId: string
+  truckId: string,
+  idempotencyKey?: string,
+  dispatchedAt?: string
 ): Promise<DispatchResult> {
-  const idempotencyKey = `wm_${Date.now()}_${Math.random().toString(16).slice(2)}`;
+  const effectiveIdempotencyKey = idempotencyKey ?? `wm_${Date.now()}_${Math.random().toString(16).slice(2)}`;
+  const effectiveDispatchedAt = dispatchedAt ?? new Date().toISOString();
 
   const response = await fetch(`${gatewayBaseUrl}/api/v1/warehouse/shipments/${encodeURIComponent(shipmentId)}/dispatch`, {
     method: "POST",
@@ -64,11 +69,11 @@ export async function dispatchShipment(
       authorization: `Bearer ${accessToken}`,
       "content-type": "application/json",
       accept: "application/json",
-      "Idempotency-Key": idempotencyKey
+      "Idempotency-Key": effectiveIdempotencyKey
     },
     body: JSON.stringify({
       truckId,
-      dispatchedAt: new Date().toISOString()
+      dispatchedAt: effectiveDispatchedAt
     })
   });
 

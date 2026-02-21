@@ -23,5 +23,7 @@ interface OrderRepositoryPort {
 
     fun markShipmentDispatched(shipmentId: String, dispatchedAt: Instant): DispatchShipmentResult?
 
+    fun applyShipmentDispatchedEvent(orderId: String, shipmentId: String, dispatchedAt: Instant): Boolean
+
     fun isHealthy(): Boolean
 }

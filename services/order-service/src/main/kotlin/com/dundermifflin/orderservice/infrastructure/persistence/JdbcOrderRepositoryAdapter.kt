@@ -239,6 +239,41 @@ class JdbcOrderRepositoryAdapter(
         )
     }
 
+    @Transactional
+    override fun applyShipmentDispatchedEvent(orderId: String, shipmentId: String, dispatchedAt: Instant): Boolean {
+        val order = getOrderById(orderId) ?: return false
+        if (order.status == OrderStatus.SHIPPED) {
+            return true
+        }
+
+        val updatedRows = jdbcTemplate.update(
+            """
+            UPDATE orders.orders
+            SET status = ?, shipment_id = ?
+            WHERE order_id = ?
+            """.trimIndent(),
+            OrderStatus.SHIPPED.name,
+            shipmentId,
+            orderId
+        )
+        if (updatedRows == 0) {
+            return false
+        }
+
+        jdbcTemplate.update(
+            """
+            INSERT INTO orders.order_timeline (order_id, status, at, source)
+            VALUES (?, ?, ?, ?)
+            """.trimIndent(),
+            orderId,
+            OrderStatus.SHIPPED.name,
+            Timestamp.from(dispatchedAt),
+            "inventory-service"
+        )
+
+        return true
+    }
+
     override fun isHealthy(): Boolean = try {
         jdbcTemplate.queryForObject("SELECT 1", Int::class.java)
         true

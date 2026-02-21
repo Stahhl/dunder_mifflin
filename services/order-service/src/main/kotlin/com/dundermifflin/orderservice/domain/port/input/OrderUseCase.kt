@@ -1,5 +1,6 @@
 package com.dundermifflin.orderservice.domain.port.input
 
+import com.dundermifflin.orderservice.domain.model.ApplyShipmentDispatchedCommand
 import com.dundermifflin.orderservice.domain.model.CreateOrderCommand
 import com.dundermifflin.orderservice.domain.model.DispatchShipmentCommand
 import com.dundermifflin.orderservice.domain.model.DispatchShipmentResult
@@ -23,4 +24,6 @@ interface OrderUseCase {
     fun recordScan(command: ScanShipmentCommand): ShipmentWorkItem?
 
     fun dispatchShipment(command: DispatchShipmentCommand): DispatchShipmentResult?
+
+    fun applyShipmentDispatched(command: ApplyShipmentDispatchedCommand): Boolean
 }

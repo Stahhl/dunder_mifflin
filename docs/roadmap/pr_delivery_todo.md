@@ -51,7 +51,7 @@ This roadmap breaks work into sequential PRs. Each PR is sized to be reviewable 
 | PR5 | `tests/e2e/specs/sales-order-timeline.spec.ts` |
 | PR6 | `tests/e2e/specs/accounting-expense-decision.spec.ts` |
 | PR7 | `tests/e2e/specs/wuphf-notification-widget.spec.ts` |
-| PR8 | Planned: offline replay/idempotency spec |
+| PR8 | `tests/e2e/specs/warehouse-offline-sync.spec.ts` |
 | PR9 | Planned: reliability/error-state regression spec |
 | PR10 | Aggregated golden-path CI gate over all required specs |
 
@@ -206,7 +206,7 @@ This roadmap breaks work into sequential PRs. Each PR is sized to be reviewable 
 - Backend services: `services/inventory-service` primary shipment API ownership + idempotency/dedupe handling across mutation paths
 - Infra dependencies: durable queue/event transport for safe replay
 - Non-goals: accounting-specific workflow expansion
-- E2E coverage: planned offline replay/idempotency spec
+- E2E coverage: `tests/e2e/specs/warehouse-offline-sync.spec.ts`
 
 **Scope**
 - Add offline queue for warehouse mutations.
