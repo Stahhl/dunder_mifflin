@@ -22,7 +22,8 @@ data class FieldErrorDetail(
 data class ApiError(
     val code: String,
     val message: String,
-    val details: List<FieldErrorDetail>? = null
+    val details: List<FieldErrorDetail>? = null,
+    val traceId: String? = null
 )
 
 data class ApiErrorEnvelope(

@@ -1,3 +1,5 @@
+import { appendTraceToMessage, applyTraceHeaders } from "./trace";
+
 export interface AuthMeResponse {
   userId: string;
   displayName: string;
@@ -85,30 +87,34 @@ function errorMessage(payload: unknown, fallback: string): string {
 }
 
 async function requestJson<T>(path: string, init: RequestInit, fallbackError: string): Promise<T> {
+  const headers = applyTraceHeaders({
+    accept: "application/json",
+    ...(init.headers ?? {})
+  });
+
   const response = await fetch(buildGatewayUrl(path), {
     ...init,
     credentials: "include",
-    headers: {
-      accept: "application/json",
-      ...(init.headers ?? {})
-    }
+    headers
   });
 
   const payload = await parseJson(response);
   if (!response.ok) {
-    throw new Error(errorMessage(payload, fallbackError));
+    throw new Error(appendTraceToMessage(errorMessage(payload, fallbackError), response));
   }
 
   return payload as T;
 }
 
 export async function fetchAuthMe(): Promise<AuthMeResponse | null> {
+  const headers = applyTraceHeaders({
+    accept: "application/json"
+  });
+
   const response = await fetch(buildGatewayUrl("/api/v1/auth/me"), {
     method: "GET",
     credentials: "include",
-    headers: {
-      accept: "application/json"
-    }
+    headers
   });
 
   if (response.status === 401) {
@@ -117,7 +123,7 @@ export async function fetchAuthMe(): Promise<AuthMeResponse | null> {
 
   const payload = await parseJson(response);
   if (!response.ok) {
-    throw new Error(errorMessage(payload, "Unable to load session profile"));
+    throw new Error(appendTraceToMessage(errorMessage(payload, "Unable to load session profile"), response));
   }
 
   return payload as AuthMeResponse;

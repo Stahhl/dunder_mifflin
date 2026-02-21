@@ -1,4 +1,5 @@
 import { createLoginUrl } from "../auth/redirect";
+import { appendTraceToMessage, applyTraceHeaders } from "./trace";
 
 function inferGatewayBaseUrl(): string {
   if (typeof window !== "undefined" && window.location?.hostname) {
@@ -18,7 +19,7 @@ export class UnauthenticatedError extends Error {
 }
 
 export async function apiClient<T>(path: string, init?: RequestInit): Promise<T> {
-  const headers = new Headers(init?.headers);
+  const headers = applyTraceHeaders(init?.headers);
   if (!headers.has("Accept")) {
     headers.set("Accept", "application/json");
   }
@@ -35,7 +36,8 @@ export async function apiClient<T>(path: string, init?: RequestInit): Promise<T>
   }
 
   if (!response.ok) {
-    throw new Error(`Request failed (${response.status})`);
+    const message = await extractErrorMessage(response);
+    throw new Error(appendTraceToMessage(message, response));
   }
 
   if (response.status === 204) {
@@ -43,4 +45,24 @@ export async function apiClient<T>(path: string, init?: RequestInit): Promise<T>
   }
 
   return (await response.json()) as T;
+}
+
+async function extractErrorMessage(response: Response): Promise<string> {
+  const fallback = `Request failed (${response.status})`;
+  const contentType = response.headers.get("content-type")?.toLowerCase() ?? "";
+  if (!contentType.includes("application/json")) {
+    return fallback;
+  }
+
+  try {
+    const payload = (await response.json()) as { error?: { message?: string } };
+    const message = payload?.error?.message;
+    if (typeof message === "string" && message.trim().length > 0) {
+      return message;
+    }
+  } catch {
+    return fallback;
+  }
+
+  return fallback;
 }

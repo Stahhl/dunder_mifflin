@@ -1,16 +1,19 @@
 import type { ShipmentListResponse } from "../types/warehouse";
+import { appendTraceToMessage, applyTraceHeaders } from "./trace";
 
 export async function fetchPendingShipments(gatewayBaseUrl: string, accessToken: string): Promise<ShipmentListResponse> {
+  const headers = applyTraceHeaders({
+    authorization: `Bearer ${accessToken}`,
+    accept: "application/json"
+  });
+
   const response = await fetch(`${gatewayBaseUrl}/api/v1/warehouse/shipments?status=PENDING`, {
-    headers: {
-      authorization: `Bearer ${accessToken}`,
-      accept: "application/json"
-    }
+    headers
   });
 
   const payload = await response.json();
   if (!response.ok) {
-    throw new Error(payload?.error?.message ?? "Unable to load shipments");
+    throw new Error(appendTraceToMessage(payload?.error?.message ?? "Unable to load shipments", response));
   }
 
   return {
@@ -27,14 +30,16 @@ export async function submitMockScan(
   quantity: number,
   idempotencyKey?: string
 ): Promise<void> {
+  const headers = applyTraceHeaders({
+    authorization: `Bearer ${accessToken}`,
+    "content-type": "application/json",
+    accept: "application/json",
+    ...(idempotencyKey ? { "Idempotency-Key": idempotencyKey } : {})
+  });
+
   const response = await fetch(`${gatewayBaseUrl}/api/v1/warehouse/shipments/${encodeURIComponent(shipmentId)}/scan`, {
     method: "POST",
-    headers: {
-      authorization: `Bearer ${accessToken}`,
-      "content-type": "application/json",
-      accept: "application/json",
-      ...(idempotencyKey ? { "Idempotency-Key": idempotencyKey } : {})
-    },
+    headers,
     body: JSON.stringify({
       barcode,
       quantity
@@ -43,7 +48,7 @@ export async function submitMockScan(
 
   const payload = await response.json();
   if (!response.ok) {
-    throw new Error(payload?.error?.message ?? "Scan request failed");
+    throw new Error(appendTraceToMessage(payload?.error?.message ?? "Scan request failed", response));
   }
 }
 
@@ -62,15 +67,16 @@ export async function dispatchShipment(
 ): Promise<DispatchResult> {
   const effectiveIdempotencyKey = idempotencyKey ?? `wm_${Date.now()}_${Math.random().toString(16).slice(2)}`;
   const effectiveDispatchedAt = dispatchedAt ?? new Date().toISOString();
+  const headers = applyTraceHeaders({
+    authorization: `Bearer ${accessToken}`,
+    "content-type": "application/json",
+    accept: "application/json",
+    "Idempotency-Key": effectiveIdempotencyKey
+  });
 
   const response = await fetch(`${gatewayBaseUrl}/api/v1/warehouse/shipments/${encodeURIComponent(shipmentId)}/dispatch`, {
     method: "POST",
-    headers: {
-      authorization: `Bearer ${accessToken}`,
-      "content-type": "application/json",
-      accept: "application/json",
-      "Idempotency-Key": effectiveIdempotencyKey
-    },
+    headers,
     body: JSON.stringify({
       truckId,
       dispatchedAt: effectiveDispatchedAt
@@ -79,7 +85,7 @@ export async function dispatchShipment(
 
   const payload = await response.json();
   if (!response.ok) {
-    throw new Error(payload?.error?.message ?? "Dispatch request failed");
+    throw new Error(appendTraceToMessage(payload?.error?.message ?? "Dispatch request failed", response));
   }
 
   return {

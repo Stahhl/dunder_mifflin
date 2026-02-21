@@ -22,7 +22,8 @@
     "test:e2e:pr6": "playwright test --config tests/e2e/config/playwright.config.ts tests/e2e/specs/accounting-expense-decision.spec.ts",
     "test:e2e:pr7": "playwright test --config tests/e2e/config/playwright.config.ts tests/e2e/specs/wuphf-notification-widget.spec.ts",
     "test:e2e:pr8": "playwright test --config tests/e2e/config/playwright.config.ts tests/e2e/specs/warehouse-offline-sync.spec.ts",
-    "test:e2e:smoke": "playwright test --config tests/e2e/config/playwright.config.ts tests/e2e/specs/auth-sales-navigation.spec.ts tests/e2e/specs/sales-order-placement.spec.ts tests/e2e/specs/warehouse-dispatch.spec.ts tests/e2e/specs/warehouse-offline-sync.spec.ts tests/e2e/specs/sales-order-timeline.spec.ts tests/e2e/specs/accounting-expense-decision.spec.ts tests/e2e/specs/wuphf-notification-widget.spec.ts"
+    "test:e2e:pr9": "playwright test --config tests/e2e/config/playwright.config.ts tests/e2e/specs/reliability-error-state.spec.ts",
+    "test:e2e:smoke": "playwright test --config tests/e2e/config/playwright.config.ts tests/e2e/specs/auth-sales-navigation.spec.ts tests/e2e/specs/sales-order-placement.spec.ts tests/e2e/specs/warehouse-dispatch.spec.ts tests/e2e/specs/warehouse-offline-sync.spec.ts tests/e2e/specs/sales-order-timeline.spec.ts tests/e2e/specs/accounting-expense-decision.spec.ts tests/e2e/specs/wuphf-notification-widget.spec.ts tests/e2e/specs/reliability-error-state.spec.ts"
   },
   "devDependencies": {
     "@playwright/test": "1.51.1"

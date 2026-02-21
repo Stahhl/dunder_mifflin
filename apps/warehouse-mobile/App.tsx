@@ -16,6 +16,13 @@ import { styles } from "./src/styles";
 import type { OfflineOperation, ShipmentSummary } from "./src/types/warehouse";
 
 export default function App() {
+  if (typeof window !== "undefined") {
+    const forceError = new URLSearchParams(window.location.search).get("__e2e_force_error__");
+    if (forceError === "1") {
+      throw new Error("Forced Warehouse render failure for reliability test.");
+    }
+  }
+
   const config = useMemo(() => getRuntimeConfig(), []);
 
   const [accessToken, setAccessToken] = useState<string | null>(null);

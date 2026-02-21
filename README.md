@@ -24,6 +24,9 @@ This repository contains the implementation plan and delivery docs for a demo ER
 ### Reference
 - [Users and Groups](./docs/reference/users_and_groups.md)
 
+### Operations
+- [PR9 Reliability Signals Contract](./docs/operations/pr9_reliability_signals.md)
+
 ### Contracts (Demo v1)
 - [REST API Contracts](./docs/contracts/rest_api_v1.md)
 - [Event Catalog](./docs/contracts/event_catalog_v1.md)

@@ -52,7 +52,7 @@ This roadmap breaks work into sequential PRs. Each PR is sized to be reviewable 
 | PR6 | `tests/e2e/specs/accounting-expense-decision.spec.ts` |
 | PR7 | `tests/e2e/specs/wuphf-notification-widget.spec.ts` |
 | PR8 | `tests/e2e/specs/warehouse-offline-sync.spec.ts` |
-| PR9 | Planned: reliability/error-state regression spec |
+| PR9 | `tests/e2e/specs/reliability-error-state.spec.ts` |
 | PR10 | Aggregated golden-path CI gate over all required specs |
 
 ## PR 1: Platform Login + App Navigation Shell
@@ -227,7 +227,7 @@ This roadmap breaks work into sequential PRs. Each PR is sized to be reviewable 
 - Backend services: gateway + all in-scope domain services tracing, metrics, alerting contracts
 - Infra dependencies: metrics/tracing/alerting stack used by all active services
 - Non-goals: new line-of-business features
-- E2E coverage: planned reliability/error-state regression spec
+- E2E coverage: `tests/e2e/specs/reliability-error-state.spec.ts`
 
 **Scope**
 - Add consistent frontend error boundaries and friendly failure states.

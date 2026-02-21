@@ -22,13 +22,18 @@ class WuphfServiceClient(
         pathAndQuery: String,
         method: String,
         userId: String,
-        body: String? = null
+        body: String? = null,
+        additionalHeaders: Map<String, String> = emptyMap()
     ): ResponseEntity<String> {
         val requestBuilder = HttpRequest.newBuilder()
             .uri(URI.create("${gatewayProperties.wuphfServiceBaseUrl}$pathAndQuery"))
             .timeout(Duration.ofSeconds(15))
             .header("content-type", "application/json")
             .header("x-user-id", userId)
+
+        additionalHeaders.forEach { (name, value) ->
+            requestBuilder.header(name, value)
+        }
 
         val request = when (method) {
             "GET" -> requestBuilder.GET().build()

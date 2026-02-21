@@ -7,7 +7,8 @@ data class ApiErrorEnvelope(
 data class ApiError(
     val code: String,
     val message: String,
-    val details: List<ApiErrorDetail> = emptyList()
+    val details: List<ApiErrorDetail> = emptyList(),
+    val traceId: String? = null
 )
 
 data class ApiErrorDetail(

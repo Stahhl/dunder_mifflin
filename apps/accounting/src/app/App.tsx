@@ -61,6 +61,13 @@ function syncExpenseIdQuery(expenseId: string) {
 }
 
 export function App() {
+  if (typeof window !== "undefined") {
+    const forceError = new URLSearchParams(window.location.search).get("__e2e_force_error__");
+    if (forceError === "1") {
+      throw new Error("Forced Accounting render failure for reliability test.");
+    }
+  }
+
   const [session, setSession] = useState<SessionState>({ status: "loading" });
   const [statusFilter, setStatusFilter] = useState<ExpenseStatus | "ALL">("PENDING");
   const [expenses, setExpenses] = useState<Expense[]>([]);

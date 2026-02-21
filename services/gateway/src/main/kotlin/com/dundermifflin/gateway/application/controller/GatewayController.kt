@@ -7,6 +7,12 @@ import com.dundermifflin.gateway.infrastructure.client.FinanceServiceClient
 import com.dundermifflin.gateway.infrastructure.client.InventoryServiceClient
 import com.dundermifflin.gateway.infrastructure.client.OrderServiceClient
 import com.dundermifflin.gateway.infrastructure.client.WuphfServiceClient
+import com.dundermifflin.gateway.infrastructure.observability.REQUEST_ID_ATTR
+import com.dundermifflin.gateway.infrastructure.observability.REQUEST_ID_HEADER
+import com.dundermifflin.gateway.infrastructure.observability.TRACEPARENT_ATTR
+import com.dundermifflin.gateway.infrastructure.observability.TRACEPARENT_HEADER
+import com.dundermifflin.gateway.infrastructure.observability.TRACE_ID_ATTR
+import com.dundermifflin.gateway.infrastructure.observability.TRACE_ID_HEADER
 import com.dundermifflin.gateway.infrastructure.security.OidcService
 import jakarta.servlet.http.HttpServletRequest
 import org.springframework.http.HttpHeaders
@@ -14,6 +20,8 @@ import org.springframework.http.HttpStatus
 import org.springframework.http.MediaType
 import org.springframework.http.ResponseCookie
 import org.springframework.http.ResponseEntity
+import org.springframework.web.context.request.RequestContextHolder
+import org.springframework.web.context.request.ServletRequestAttributes
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
@@ -195,6 +203,7 @@ class GatewayController(
         val emitter = SseEmitter(0L)
         val shutdown = AtomicBoolean(false)
         val lastPayload = AtomicReference<String?>(null)
+        val traceHeaders = currentRequestTraceHeaders()
         val scheduler = Executors.newSingleThreadScheduledExecutor()
 
         fun stopStream() {
@@ -209,7 +218,12 @@ class GatewayController(
             }
 
             try {
-                val forwarded = orderServiceClient.forward(timelinePath, "GET", session.userId)
+                val forwarded = orderServiceClient.forward(
+                    timelinePath,
+                    "GET",
+                    session.userId,
+                    additionalHeaders = traceHeaders
+                )
                 if (forwarded.statusCode.is2xxSuccessful) {
                     val payload = forwarded.body ?: "{\"orderId\":\"$orderId\",\"events\":[]}"
                     if (lastPayload.get() != payload) {
@@ -526,13 +540,15 @@ class GatewayController(
     }
 
     private fun unauthOrForbidden(request: HttpServletRequest): ResponseEntity<Any> {
+        val traceId = currentTraceId()
         val hasSession = sessionService.readSession(request) != null
         return if (!hasSession) {
             ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(
                 mapOf(
                     "error" to mapOf(
                         "code" to "UNAUTHENTICATED",
-                        "message" to "Login is required"
+                        "message" to "Login is required",
+                        "traceId" to traceId
                     )
                 )
             )
@@ -541,7 +557,8 @@ class GatewayController(
                 mapOf(
                     "error" to mapOf(
                         "code" to "FORBIDDEN",
-                        "message" to "Sales role is required to access orders"
+                        "message" to "Sales role is required to access orders",
+                        "traceId" to traceId
                     )
                 )
             )
@@ -549,13 +566,15 @@ class GatewayController(
     }
 
     private fun mobileUnauthOrForbidden(request: HttpServletRequest): ResponseEntity<Any> {
+        val traceId = currentTraceId()
         val hasPrincipal = readBearerPrincipal(request) != null || sessionService.readSession(request) != null
         return if (!hasPrincipal) {
             ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(
                 mapOf(
                     "error" to mapOf(
                         "code" to "UNAUTHENTICATED",
-                        "message" to "Bearer token or session is required"
+                        "message" to "Bearer token or session is required",
+                        "traceId" to traceId
                     )
                 )
             )
@@ -564,7 +583,8 @@ class GatewayController(
                 mapOf(
                     "error" to mapOf(
                         "code" to "FORBIDDEN",
-                        "message" to "Warehouse role is required to access shipments"
+                        "message" to "Warehouse role is required to access shipments",
+                        "traceId" to traceId
                     )
                 )
             )
@@ -572,13 +592,15 @@ class GatewayController(
     }
 
     private fun accountingUnauthOrForbidden(request: HttpServletRequest): ResponseEntity<Any> {
+        val traceId = currentTraceId()
         val hasSession = sessionService.readSession(request) != null
         return if (!hasSession) {
             ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(
                 mapOf(
                     "error" to mapOf(
                         "code" to "UNAUTHENTICATED",
-                        "message" to "Login is required"
+                        "message" to "Login is required",
+                        "traceId" to traceId
                     )
                 )
             )
@@ -587,7 +609,8 @@ class GatewayController(
                 mapOf(
                     "error" to mapOf(
                         "code" to "FORBIDDEN",
-                        "message" to "Accounting role is required to access expenses"
+                        "message" to "Accounting role is required to access expenses",
+                        "traceId" to traceId
                     )
                 )
             )
@@ -595,11 +618,13 @@ class GatewayController(
     }
 
     private fun unauthenticatedOnly(): ResponseEntity<Any> {
+        val traceId = currentTraceId()
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(
             mapOf(
                 "error" to mapOf(
                     "code" to "UNAUTHENTICATED",
-                    "message" to "Login is required"
+                    "message" to "Login is required",
+                    "traceId" to traceId
                 )
             )
         )
@@ -624,7 +649,13 @@ class GatewayController(
         body: String? = null,
         additionalHeaders: Map<String, String> = emptyMap()
     ): ResponseEntity<Any> {
-        val forwarded = orderServiceClient.forward(pathAndQuery, method, userId, body, additionalHeaders)
+        val forwarded = orderServiceClient.forward(
+            pathAndQuery,
+            method,
+            userId,
+            body,
+            currentRequestTraceHeaders() + additionalHeaders
+        )
         return ResponseEntity.status(forwarded.statusCode)
             .headers(forwarded.headers)
             .body(forwarded.body ?: "")
@@ -636,7 +667,13 @@ class GatewayController(
         userId: String,
         body: String? = null
     ): ResponseEntity<Any> {
-        val forwarded = financeServiceClient.forward(pathAndQuery, method, userId, body)
+        val forwarded = financeServiceClient.forward(
+            pathAndQuery,
+            method,
+            userId,
+            body,
+            currentRequestTraceHeaders()
+        )
         return ResponseEntity.status(forwarded.statusCode)
             .headers(forwarded.headers)
             .body(forwarded.body ?: "")
@@ -649,7 +686,13 @@ class GatewayController(
         body: String? = null,
         additionalHeaders: Map<String, String> = emptyMap()
     ): ResponseEntity<Any> {
-        val forwarded = inventoryServiceClient.forward(pathAndQuery, method, userId, body, additionalHeaders)
+        val forwarded = inventoryServiceClient.forward(
+            pathAndQuery,
+            method,
+            userId,
+            body,
+            currentRequestTraceHeaders() + additionalHeaders
+        )
         return ResponseEntity.status(forwarded.statusCode)
             .headers(forwarded.headers)
             .body(forwarded.body ?: "")
@@ -661,10 +704,45 @@ class GatewayController(
         userId: String,
         body: String? = null
     ): ResponseEntity<Any> {
-        val forwarded = wuphfServiceClient.forward(pathAndQuery, method, userId, body)
+        val forwarded = wuphfServiceClient.forward(
+            pathAndQuery,
+            method,
+            userId,
+            body,
+            currentRequestTraceHeaders()
+        )
         return ResponseEntity.status(forwarded.statusCode)
             .headers(forwarded.headers)
             .body(forwarded.body ?: "")
+    }
+
+    private fun currentRequestTraceHeaders(): Map<String, String> {
+        val request = (RequestContextHolder.getRequestAttributes() as? ServletRequestAttributes)?.request
+            ?: return emptyMap()
+
+        val traceId = request.getAttribute(TRACE_ID_ATTR)?.toString()?.trim().orEmpty()
+        val requestId = request.getAttribute(REQUEST_ID_ATTR)?.toString()?.trim().orEmpty()
+        val traceparent = request.getAttribute(TRACEPARENT_ATTR)?.toString()?.trim().orEmpty()
+
+        val headers = mutableMapOf<String, String>()
+        if (traceId.isNotBlank()) {
+            headers[TRACE_ID_HEADER] = traceId
+        }
+        if (requestId.isNotBlank()) {
+            headers[REQUEST_ID_HEADER] = requestId
+        }
+        if (traceparent.isNotBlank()) {
+            headers[TRACEPARENT_HEADER] = traceparent
+        }
+        return headers
+    }
+
+    private fun currentTraceId(): String? {
+        val request = (RequestContextHolder.getRequestAttributes() as? ServletRequestAttributes)?.request
+            ?: return null
+
+        val traceId = request.getAttribute(TRACE_ID_ATTR)?.toString()?.trim().orEmpty()
+        return traceId.ifBlank { null }
     }
 
     private fun readBearerPrincipal(request: HttpServletRequest): RequestPrincipal? {

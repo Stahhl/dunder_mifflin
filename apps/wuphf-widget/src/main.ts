@@ -19,6 +19,37 @@ type NotificationListResponse = {
 const TAG_NAME = "dunder-wuphf-widget";
 const DEFAULT_POLL_INTERVAL_MS = 5_000;
 
+function randomHex(length: number): string {
+  const bytes = new Uint8Array(Math.ceil(length / 2));
+  if (typeof crypto !== "undefined" && typeof crypto.getRandomValues === "function") {
+    crypto.getRandomValues(bytes);
+  } else {
+    for (let index = 0; index < bytes.length; index += 1) {
+      bytes[index] = Math.floor(Math.random() * 256);
+    }
+  }
+
+  return Array.from(bytes, (value) => value.toString(16).padStart(2, "0")).join("").slice(0, length);
+}
+
+function applyTraceHeaders(headersInit?: HeadersInit): Headers {
+  const headers = new Headers(headersInit);
+  const traceId = randomHex(32);
+  const spanId = randomHex(16);
+
+  if (!headers.has("traceparent")) {
+    headers.set("traceparent", `00-${traceId}-${spanId}-01`);
+  }
+  if (!headers.has("X-Trace-Id")) {
+    headers.set("X-Trace-Id", traceId);
+  }
+  if (!headers.has("X-Request-Id")) {
+    headers.set("X-Request-Id", `req_${Date.now()}_${randomHex(8)}`);
+  }
+
+  return headers;
+}
+
 function inferGatewayBaseUrl(): string {
   if (typeof window !== "undefined" && window.location?.hostname) {
     return `${window.location.protocol}//${window.location.hostname}:8081`;
@@ -103,9 +134,9 @@ class DunderWuphfWidget extends HTMLElement {
       const response = await fetch(`${this.gatewayBaseUrl()}/api/v1/notifications`, {
         method: "GET",
         credentials: "include",
-        headers: {
+        headers: applyTraceHeaders({
           accept: "application/json"
-        }
+        })
       });
 
       if (response.status === 401) {
@@ -139,9 +170,9 @@ class DunderWuphfWidget extends HTMLElement {
     await fetch(`${this.gatewayBaseUrl()}/api/v1/notifications/${encodeURIComponent(notificationId)}/read`, {
       method: "POST",
       credentials: "include",
-      headers: {
+      headers: applyTraceHeaders({
         accept: "application/json"
-      }
+      })
     });
   }
 

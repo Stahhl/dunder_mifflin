@@ -49,6 +49,13 @@ function PortalRoutes() {
 }
 
 export function App() {
+  if (typeof window !== "undefined") {
+    const forceError = new URLSearchParams(window.location.search).get("__e2e_force_error__");
+    if (forceError === "1") {
+      throw new Error("Forced Portal render failure for reliability test.");
+    }
+  }
+
   return (
     <AuthProvider>
       <BrowserRouter>

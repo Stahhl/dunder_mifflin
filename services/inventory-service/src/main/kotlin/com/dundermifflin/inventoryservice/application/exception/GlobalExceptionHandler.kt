@@ -1,7 +1,7 @@
-package com.dundermifflin.financeservice.application.exception
+package com.dundermifflin.inventoryservice.application.exception
 
-import com.dundermifflin.financeservice.application.dto.ApiError
-import com.dundermifflin.financeservice.application.dto.ApiErrorEnvelope
+import com.dundermifflin.inventoryservice.application.dto.ApiError
+import com.dundermifflin.inventoryservice.application.dto.ApiErrorEnvelope
 import jakarta.servlet.http.HttpServletRequest
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
@@ -9,7 +9,7 @@ import org.springframework.http.converter.HttpMessageNotReadableException
 import org.springframework.web.bind.annotation.ExceptionHandler
 import org.springframework.web.bind.annotation.RestControllerAdvice
 
-private const val TRACE_ID_ATTR = "finance.traceId"
+private const val TRACE_ID_ATTR = "inventory.traceId"
 
 @RestControllerAdvice
 class GlobalExceptionHandler {
@@ -37,7 +37,7 @@ class GlobalExceptionHandler {
             ApiErrorEnvelope(
                 error = ApiError(
                     code = "INTERNAL_ERROR",
-                    message = exception.message ?: "Unknown finance-service error",
+                    message = exception.message ?: "Unknown inventory-service error",
                     traceId = traceId
                 )
             )

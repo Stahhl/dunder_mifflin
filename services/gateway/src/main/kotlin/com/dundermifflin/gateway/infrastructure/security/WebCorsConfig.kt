@@ -21,9 +21,23 @@ class WebCorsConfig(
         val config = CorsConfiguration().apply {
             allowCredentials = true
             this.allowedOrigins = allowedOrigins
-            allowedHeaders = listOf("Authorization", "Content-Type", "Idempotency-Key", "Accept")
+            allowedHeaders = listOf(
+                "Authorization",
+                "Content-Type",
+                "Idempotency-Key",
+                "Accept",
+                "X-Trace-Id",
+                "X-Request-Id",
+                "traceparent"
+            )
             allowedMethods = listOf("GET", "POST", "OPTIONS")
-            exposedHeaders = listOf("content-type", "cache-control")
+            exposedHeaders = listOf(
+                "content-type",
+                "cache-control",
+                "x-trace-id",
+                "x-request-id",
+                "traceparent"
+            )
             maxAge = 3_600
         }
 

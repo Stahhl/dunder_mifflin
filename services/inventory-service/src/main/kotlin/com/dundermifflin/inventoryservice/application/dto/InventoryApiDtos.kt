@@ -2,7 +2,8 @@ package com.dundermifflin.inventoryservice.application.dto
 
 data class ApiError(
     val code: String,
-    val message: String
+    val message: String,
+    val traceId: String? = null
 )
 
 data class ApiErrorEnvelope(
