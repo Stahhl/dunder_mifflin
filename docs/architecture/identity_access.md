@@ -50,6 +50,7 @@ Decision for demo implementation:
 | `accounting` | `accountant` | Portal + Accounting |
 | `management` | `manager` | Portal + all app links |
 | `admin_staff` | `portal-user` | Portal only |
+| `it_support` | `it-support` | Observability stack only (no business app routes by default) |
 
 ### Navigation Rule
 - App links are visible only when user has matching role or `manager`.
@@ -66,6 +67,7 @@ Decision for demo implementation:
 - Sales: `jhalpert` / `password`
 - Warehouse: `dphilbin` / `password`
 - Accounting: `amartin` / `password`
+- IT support / observability: `nick` / `password`
 
 ## Session and Security Defaults
 
@@ -73,3 +75,4 @@ Decision for demo implementation:
 - Session expiration behavior: redirect to login with return URL.
 - Services enforce role checks with `@PreAuthorize`.
 - Sensitive operations (expense decisions, shipment dispatch) require authenticated user context.
+- Observability tools must require authenticated role `it-support` (or tighter platform-admin override), and must not be exposed anonymously.

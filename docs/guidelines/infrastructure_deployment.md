@@ -81,7 +81,13 @@ Required variables (example values):
 - Gateway starts after IAM and required backend services are healthy.
 - Frontends start after gateway is healthy.
 
-## 9. Required Commands
+## 9. IAM Boundary for Observability
+
+- Observability surfaces (Grafana, Jaeger, Prometheus/Loki UIs) must require SSO and role `it-support`.
+- App-business roles (`sales-associate`, `warehouse-operator`, `accountant`, `portal-user`) must not receive observability access by default.
+- Keep observability access read-only for `it-support`; reserve administrative writes for an explicit elevated platform role.
+
+## 10. Required Commands
 
 ```bash
 # full demo stack

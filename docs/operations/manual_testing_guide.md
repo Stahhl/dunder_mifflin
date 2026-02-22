@@ -70,12 +70,14 @@ Core role test users:
 - Sales: `jhalpert`
 - Warehouse: `dphilbin`
 - Accounting: `amartin`
+- IT support / observability: `nick`
 
 Role expectations:
 
 - `jhalpert` can access Portal + Infinity.
 - `dphilbin` can access Portal + Warehouse; Sales routes should be denied.
 - `amartin` can access Portal + Accounting.
+- `nick` is reserved for observability stack access (`it-support`) and should not have business app permissions by default.
 
 ## 5. Manual Test Scenarios
 

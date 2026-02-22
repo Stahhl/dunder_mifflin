@@ -61,6 +61,17 @@ uid: pbeesly
 mail: pbeesly@dundermifflin.com
 userPassword: password
 
+dn: uid=nick,ou=people,dc=dundermifflin,dc=com
+objectClass: inetOrgPerson
+objectClass: organizationalPerson
+objectClass: person
+objectClass: top
+cn: Nick
+sn: IT
+uid: nick
+mail: nick@dundermifflin.com
+userPassword: password
+
 dn: cn=sales,ou=groups,dc=dundermifflin,dc=com
 objectClass: groupOfNames
 cn: sales
@@ -85,3 +96,8 @@ dn: cn=admin_staff,ou=groups,dc=dundermifflin,dc=com
 objectClass: groupOfNames
 cn: admin_staff
 member: uid=pbeesly,ou=people,dc=dundermifflin,dc=com
+
+dn: cn=it_support,ou=groups,dc=dundermifflin,dc=com
+objectClass: groupOfNames
+cn: it_support
+member: uid=nick,ou=people,dc=dundermifflin,dc=com

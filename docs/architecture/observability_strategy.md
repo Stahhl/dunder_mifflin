@@ -95,3 +95,13 @@ This document details the observability strategy for Dunder Mifflin Scranton. We
 *   `prometheus`: Metrics database.
 *   `loki`: Log aggregation system.
 *   `grafana`: Unified dashboard for Traces, Metrics, and Logs.
+
+## Access Control
+
+Observability endpoints and dashboards are operational surfaces and must be isolated from line-of-business app roles.
+
+- Primary access role: `it-support` (mapped from LDAP group `it_support`).
+- Expected login model: Keycloak SSO for Grafana and any future observability UI.
+- Anonymous access must remain disabled.
+- `sales-associate`, `warehouse-operator`, `accountant`, and `portal-user` should not receive observability access by default.
+- If break-glass admin access is needed, use a separate elevated role (for example `platform-admin`) rather than broadening `it-support`.

@@ -61,6 +61,20 @@ $KCADM create components -r "$REALM" \
 LDAP_ID=$($KCADM get components -r "$REALM" -q name=dunder-ldap | sed -n 's/.*"id" : "\([^"]*\)".*/\1/p' | tail -n1)
 test -n "$LDAP_ID"
 
+ensure_role() {
+  role_name=$1
+  if ! $KCADM get "roles/$role_name" -r "$REALM" >/dev/null 2>&1; then
+    $KCADM create roles -r "$REALM" -s "name=$role_name"
+  fi
+}
+
+ensure_role sales-associate
+ensure_role warehouse-operator
+ensure_role accountant
+ensure_role manager
+ensure_role portal-user
+ensure_role it-support
+
 ensure_user() {
   username=$1
   first_name=$2
@@ -79,3 +93,4 @@ ensure_user() {
 ensure_user jhalpert Jim Halpert jhalpert@dundermifflin.com sales-associate
 ensure_user dphilbin Darryl Philbin dphilbin@dundermifflin.com warehouse-operator
 ensure_user amartin Angela Martin amartin@dundermifflin.com accountant
+ensure_user nick Nick IT nick@dundermifflin.com it-support

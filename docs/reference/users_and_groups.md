@@ -9,6 +9,7 @@ This document outlines the organizational structure, departments, and user accou
 - Sales: `jhalpert`
 - Warehouse: `dphilbin`
 - Accounting: `amartin`
+- IT support / observability: `nick`
 
 ## 1. Management (Group: `management`)
 Access Level: High (Financials, HR Records, All Sales Data)
@@ -59,7 +60,6 @@ Access Level: Low (Quality Logs, Vendor Contacts)
 | Name | Role | Username | Email | Notes |
 |------|------|----------|-------|-------|
 | **Kelly Kapoor** | Customer Service Rep | `kkapoor` | `kkapoor@dundermifflin.com` | High bandwidth usage (Social Media/Netflix). |
-| **Creed Bratton** | Quality Assurance | `cbratton` | `cbratton@dundermifflin.com` | **SYSTEM ALERT:** Verify identity. User attempts to run unverified DOS software. |
 | **Meredith Palmer** | Supplier Relations | `mpalmer` | `mpalmer@dundermifflin.com` | Solitaire high score holder. |
 
 ## 7. Temps / Interns (Group: `temps`)
@@ -76,3 +76,10 @@ Access Level: Inventory Only
 |------|------|----------|-------|-------|
 | **Darryl Philbin** | Warehouse Foreman | `dphilbin` | `dphilbin@dundermifflin.com` | Requires access to inventory management system. |
 | **Roy Anderson** | Warehouse Staff | `randerson` | `randerson@dundermifflin.com` | |
+
+## 9. IT Support / Platform Operations (Group: `it_support`)
+Access Level: Observability stack only (Grafana/Prometheus/Jaeger/Loki read access)
+
+| Name | Role | Username | Email | Notes |
+|------|------|----------|-------|-------|
+| **Nick** | IT Support Analyst | `nick` | `nick@dundermifflin.com` | Dedicated role for operational dashboards and incident triage. |

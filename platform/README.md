@@ -11,6 +11,7 @@ Current app service Dockerfiles are placeholder scaffolds and should be replaced
 Seed helpers used by compose:
 - `ldap-seed` one-shot job imports `platform/ldap/users.ldif` if users are missing.
 - `keycloak-seed` one-shot job configures LDAP provider and ensures PR1 test users/roles exist.
+- Seeded IT support account: `nick` (`it-support`) for observability-only access policy.
 
 ## Included Services
 

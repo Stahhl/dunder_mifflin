@@ -27,6 +27,10 @@
       {
         "name": "portal-user",
         "description": "Portal-only access"
+      },
+      {
+        "name": "it-support",
+        "description": "Observability stack access (read-only support operations)"
       }
     ]
   },
@@ -50,6 +54,10 @@
     {
       "name": "admin_staff",
       "realmRoles": ["portal-user"]
+    },
+    {
+      "name": "it_support",
+      "realmRoles": ["it-support"]
     }
   ],
   "clients": [

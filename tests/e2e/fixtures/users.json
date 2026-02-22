@@ -2,5 +2,17 @@
   "sales": {
     "username": "jhalpert",
     "password": "password"
+  },
+  "warehouse": {
+    "username": "dphilbin",
+    "password": "password"
+  },
+  "accounting": {
+    "username": "amartin",
+    "password": "password"
+  },
+  "itSupport": {
+    "username": "nick",
+    "password": "password"
   }
 }
