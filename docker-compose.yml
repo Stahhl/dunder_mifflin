@@ -513,6 +513,68 @@ services:
       - "${WAREHOUSE_MOBILE_PORT:-3004}:3004"
     networks: [dmf]
 
+  prometheus:
+    image: prom/prometheus:v2.55.1
+    restart: unless-stopped
+    profiles: ["app", "observability"]
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+    volumes:
+      - ./platform/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O /dev/null http://127.0.0.1:9090/-/healthy || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+    networks: [dmf]
+
+  grafana:
+    image: grafana/grafana:11.2.2
+    restart: unless-stopped
+    profiles: ["app", "observability"]
+    depends_on:
+      keycloak:
+        condition: service_healthy
+      keycloak-seed:
+        condition: service_completed_successfully
+      prometheus:
+        condition: service_healthy
+    environment:
+      GF_SERVER_ROOT_URL: http://${GRAFANA_PUBLIC_HOST:-host.docker.internal}:${GRAFANA_PORT:-3005}
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD: admin
+      GF_AUTH_ANONYMOUS_ENABLED: "false"
+      GF_AUTH_BASIC_ENABLED: "false"
+      GF_AUTH_DISABLE_LOGIN_FORM: "true"
+      GF_AUTH_GENERIC_OAUTH_ENABLED: "true"
+      GF_AUTH_GENERIC_OAUTH_NAME: Keycloak
+      GF_AUTH_GENERIC_OAUTH_ALLOW_SIGN_UP: "true"
+      GF_AUTH_GENERIC_OAUTH_CLIENT_ID: dunder-observability
+      GF_AUTH_GENERIC_OAUTH_CLIENT_SECRET: observability-secret-change-me
+      GF_AUTH_GENERIC_OAUTH_SCOPES: openid profile email roles
+      GF_AUTH_GENERIC_OAUTH_AUTH_URL: http://${KEYCLOAK_PUBLIC_HOST:-host.docker.internal}:${KEYCLOAK_PORT:-8080}/realms/${KEYCLOAK_REALM:-scranton-branch}/protocol/openid-connect/auth
+      GF_AUTH_GENERIC_OAUTH_TOKEN_URL: http://keycloak:8080/realms/${KEYCLOAK_REALM:-scranton-branch}/protocol/openid-connect/token
+      GF_AUTH_GENERIC_OAUTH_API_URL: http://keycloak:8080/realms/${KEYCLOAK_REALM:-scranton-branch}/protocol/openid-connect/userinfo
+      GF_AUTH_GENERIC_OAUTH_ROLE_ATTRIBUTE_PATH: contains(roles[*], 'it-support') && 'Viewer' || 'None'
+      GF_AUTH_GENERIC_OAUTH_ROLE_ATTRIBUTE_STRICT: "true"
+      GF_AUTH_GENERIC_OAUTH_GROUPS_ATTRIBUTE_PATH: roles
+      GF_AUTH_GENERIC_OAUTH_ALLOWED_GROUPS: it-support
+      GF_AUTH_GENERIC_OAUTH_ALLOW_ASSIGN_GRAFANA_ADMIN: "false"
+      GF_AUTH_GENERIC_OAUTH_SKIP_ORG_ROLE_SYNC: "false"
+    volumes:
+      - grafana-data:/var/lib/grafana
+      - ./platform/grafana/provisioning:/etc/grafana/provisioning:ro
+    ports:
+      - "${GRAFANA_PORT:-3005}:3000"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O /dev/null http://127.0.0.1:3000/api/health || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 15
+      start_period: 15s
+    networks: [dmf]
+
   unit-tests:
     image: node:20-alpine
     profiles: ["test"]
@@ -584,6 +646,7 @@ services:
         ready=0; for i in $(seq 1 90); do if curl -fsS "$${PLAYWRIGHT_INFINITY_BASE_URL}/" >/dev/null 2>&1; then ready=1; break; fi; sleep 2; done; [ "$$ready" -eq 1 ] &&
         ready=0; for i in $(seq 1 90); do if curl -fsS "$${PLAYWRIGHT_ACCOUNTING_BASE_URL}/" >/dev/null 2>&1; then ready=1; break; fi; sleep 2; done; [ "$$ready" -eq 1 ] &&
         ready=0; for i in $(seq 1 90); do if curl -fsS "$${PLAYWRIGHT_WUPHF_WIDGET_BASE_URL}/wuphf-widget.js" >/dev/null 2>&1; then ready=1; break; fi; sleep 2; done; [ "$$ready" -eq 1 ] &&
+        ready=0; for i in $(seq 1 90); do if curl -fsS "$${PLAYWRIGHT_GRAFANA_BASE_URL}/login" >/dev/null 2>&1; then ready=1; break; fi; sleep 2; done; [ "$$ready" -eq 1 ] &&
         pnpm config set store-dir /pnpm-store &&
         pnpm install --no-frozen-lockfile &&
         pnpm test:e2e:gate
@@ -595,6 +658,7 @@ services:
       PLAYWRIGHT_INFINITY_BASE_URL: http://host.docker.internal:${INFINITY_WEB_PORT:-3001}
       PLAYWRIGHT_ACCOUNTING_BASE_URL: http://host.docker.internal:${ACCOUNTING_WEB_PORT:-3002}
       PLAYWRIGHT_WUPHF_WIDGET_BASE_URL: http://host.docker.internal:${WUPHF_WIDGET_PORT:-3003}
+      PLAYWRIGHT_GRAFANA_BASE_URL: http://host.docker.internal:${GRAFANA_PORT:-3005}
     extra_hosts:
       - host.docker.internal:host-gateway
     volumes:
@@ -608,6 +672,7 @@ volumes:
   keycloak-data:
   ldap-data:
   ldap-config:
+  grafana-data:
   pnpm-store:
 
 networks:

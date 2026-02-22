@@ -5,7 +5,7 @@ This runbook explains how to manually validate the currently implemented user wo
 ## 1. Prerequisites
 
 - Docker Desktop (or Docker Engine) with Compose v2.
-- Open ports from `.env` defaults (`8080`, `8081`, `3000`-`3004`, `5432`, `5672`, `8025`).
+- Open ports from `.env` defaults (`8080`, `8081`, `3000`-`3005`, `5432`, `5672`, `8025`).
 
 ## 2. Start/Stop Commands
 
@@ -53,6 +53,7 @@ docker compose down -v
 - Infinity web app: `http://localhost:3001`
 - Accounting web app: `http://localhost:3002`
 - Warehouse mobile web (Expo web): `http://localhost:3004`
+- Grafana (observability): `http://localhost:3005`
 - MailHog: `http://localhost:8025`
 
 Recommended auth entry routes (through gateway):
@@ -184,6 +185,19 @@ Expected:
 Expected:
 - Profile fields persist across refresh.
 - Default app preference is honored (redirects to Infinity route after login).
+
+### H. Observability Access Control (`it-support`)
+
+1. Open `http://localhost:3005`.
+2. Click `Sign in with Keycloak`.
+3. Log in as `nick` / `password`.
+4. Confirm Grafana loads and Prometheus datasource is available.
+5. Log out.
+6. Repeat with `jhalpert` / `password`.
+
+Expected:
+- `nick` can authenticate and view Grafana as read-only (`Viewer`).
+- Non-`it-support` users are denied org-role assignment and cannot access dashboards.
 
 ## 6. Optional API/Trace Spot Checks
 

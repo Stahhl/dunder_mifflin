@@ -24,6 +24,62 @@ if [ -n "$WAREHOUSE_CLIENT_ID" ]; then
     -s 'attributes."pkce.code.challenge.method"=S256'
 fi
 
+OBSERVABILITY_CLIENT_ID=$($KCADM get clients -r "$REALM" -q clientId=dunder-observability | sed -n 's/.*"id" : "\([^"]*\)".*/\1/p' | head -n1)
+if [ -n "$OBSERVABILITY_CLIENT_ID" ]; then
+  $KCADM update "clients/$OBSERVABILITY_CLIENT_ID" -r "$REALM" \
+    -s 'publicClient=false' \
+    -s 'secret=observability-secret-change-me' \
+    -s 'standardFlowEnabled=true' \
+    -s 'directAccessGrantsEnabled=false' \
+    -s 'serviceAccountsEnabled=false' \
+    -s 'redirectUris=["http://localhost:3005/login/generic_oauth","http://host.docker.internal:3005/login/generic_oauth"]' \
+    -s 'webOrigins=["http://localhost:3005","http://host.docker.internal:3005"]'
+else
+  $KCADM create clients -r "$REALM" \
+    -s clientId=dunder-observability \
+    -s name='Dunder Mifflin Observability' \
+    -s enabled=true \
+    -s protocol=openid-connect \
+    -s publicClient=false \
+    -s secret=observability-secret-change-me \
+    -s standardFlowEnabled=true \
+    -s directAccessGrantsEnabled=false \
+    -s serviceAccountsEnabled=false \
+    -s 'redirectUris=["http://localhost:3005/login/generic_oauth","http://host.docker.internal:3005/login/generic_oauth"]' \
+    -s 'webOrigins=["http://localhost:3005","http://host.docker.internal:3005"]'
+fi
+
+if [ -z "$OBSERVABILITY_CLIENT_ID" ]; then
+  OBSERVABILITY_CLIENT_ID=$($KCADM get clients -r "$REALM" -q clientId=dunder-observability | sed -n 's/.*"id" : "\([^"]*\)".*/\1/p' | head -n1)
+fi
+test -n "$OBSERVABILITY_CLIENT_ID"
+
+for mapper_id in $($KCADM get "clients/$OBSERVABILITY_CLIENT_ID/protocol-mappers/models" -r "$REALM" | sed -n 's/.*"id" : "\([^"]*\)".*/\1/p'); do
+  $KCADM delete "clients/$OBSERVABILITY_CLIENT_ID/protocol-mappers/models/$mapper_id" -r "$REALM"
+done
+
+$KCADM create "clients/$OBSERVABILITY_CLIENT_ID/protocol-mappers/models" -r "$REALM" \
+  -s name=realm-roles \
+  -s protocol=openid-connect \
+  -s protocolMapper=oidc-usermodel-realm-role-mapper \
+  -s 'config."multivalued"="true"' \
+  -s 'config."userinfo.token.claim"="true"' \
+  -s 'config."id.token.claim"="true"' \
+  -s 'config."access.token.claim"="true"' \
+  -s 'config."claim.name"="roles"' \
+  -s 'config."jsonType.label"="String"'
+
+$KCADM create "clients/$OBSERVABILITY_CLIENT_ID/protocol-mappers/models" -r "$REALM" \
+  -s name=groups \
+  -s protocol=openid-connect \
+  -s protocolMapper=oidc-group-membership-mapper \
+  -s 'config."full.path"="true"' \
+  -s 'config."userinfo.token.claim"="true"' \
+  -s 'config."id.token.claim"="true"' \
+  -s 'config."access.token.claim"="true"' \
+  -s 'config."claim.name"="groups"' \
+  -s 'config."jsonType.label"="String"'
+
 for provider_name in dunder-ldap temp-ldap; do
   for id in $($KCADM get components -r "$REALM" -q name="$provider_name" | sed -n 's/.*"id" : "\([^"]*\)".*/\1/p'); do
     $KCADM delete "components/$id" -r "$REALM"

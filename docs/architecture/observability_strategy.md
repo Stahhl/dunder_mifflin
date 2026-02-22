@@ -90,11 +90,16 @@ This document details the observability strategy for Dunder Mifflin Scranton. We
 
 ## Infrastructure Stack (Docker Compose)
 
-*   `otel-collector`: The central processor.
-*   `jaeger`: Distributed tracing backend.
+Current implementation:
+
 *   `prometheus`: Metrics database.
+*   `grafana`: Dashboard and operational entrypoint (SSO via Keycloak).
+
+Planned expansion:
+
+*   `otel-collector`: Central telemetry processor.
+*   `jaeger`: Distributed tracing backend.
 *   `loki`: Log aggregation system.
-*   `grafana`: Unified dashboard for Traces, Metrics, and Logs.
 
 ## Access Control
 

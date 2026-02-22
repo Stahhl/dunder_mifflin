@@ -18,9 +18,9 @@ Run the demo platform with a single command using Docker Compose.
 
 ## 4. Runtime Profiles
 
-- `app`: full stack (frontend + backend + infra + observability).
+- `app`: full stack (frontend + backend + infra + Prometheus + Grafana).
 - `infra`: databases, broker, IAM only.
-- `observability`: otel, prometheus, loki, grafana, jaeger.
+- `observability`: Prometheus + Grafana (for observability-focused startup).
 - `e2e`: app profile plus test seed utilities.
 - `test`: unit test runner containers.
 
@@ -50,11 +50,8 @@ Run the demo platform with a single command using Docker Compose.
 - `warehouse-mobile` (Expo/dev profile or device build)
 
 ### Observability
-- `otel-collector`
 - `prometheus`
-- `loki`
 - `grafana`
-- `jaeger`
 
 ## 6. Environment Defaults
 
@@ -66,6 +63,8 @@ Required variables (example values):
 - `KEYCLOAK_ADMIN=admin`
 - `KEYCLOAK_ADMIN_PASSWORD=admin`
 - `KEYCLOAK_REALM=scranton-branch`
+- `KEYCLOAK_PUBLIC_HOST=host.docker.internal` (used by Grafana OAuth redirect target)
+- `GRAFANA_PUBLIC_HOST=host.docker.internal` (used in Grafana OAuth callback URL)
 
 ## 7. Data Store Topology
 
@@ -95,6 +94,9 @@ docker compose --profile app up -d
 
 # infra only
 docker compose --profile infra up -d
+
+# observability only (requires infra profile for IAM dependencies)
+docker compose --profile infra --profile observability up -d
 
 # unit tests
 docker compose --profile test run --rm unit-tests
