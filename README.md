@@ -6,6 +6,7 @@ This repository contains the implementation plan and delivery docs for a demo ER
 
 ### Roadmap
 - [Product Delivery TODO (PR-by-PR)](./docs/roadmap/pr_delivery_todo.md)
+- [Business Intelligence Platform Plan (Future)](./docs/roadmap/bi_platform_plan.md)
 
 ### Architecture
 - [System Overview](./docs/architecture/system_overview.md)
@@ -57,7 +58,7 @@ This repository contains the implementation plan and delivery docs for a demo ER
 - Backends in active use: `services/gateway`, `services/sales-service`, `services/order-service`, `services/inventory-service`, `services/finance-service`, `services/wuphf-service`, and `services/profile-service`.
 - Warehouse shipment API ownership is now in `services/inventory-service`, with `services/order-service` consuming `shipment.dispatched.v1` to keep order status/timeline in sync.
 - Playwright golden-path coverage now aggregates required PR2-PR12 specs and is enforced via CI gate in PR10.
-- Roadmap/contracts docs remain the source of truth for follow-on scope (PR13+).
+- Roadmap/contracts docs remain the source of truth for follow-on backlog scope.
 
 ## Quickstart (Docker-Only)
 

@@ -7,6 +7,7 @@ This roadmap breaks work into sequential PRs. Each PR is sized to be reviewable 
 - REST contracts: `docs/contracts/rest_api_v1.md`
 - Event contracts: `docs/contracts/event_catalog_v1.md`
 - IAM/RBAC mapping: `docs/architecture/identity_access.md`
+- Future BI plan: `docs/roadmap/bi_platform_plan.md`
 
 ## Component Delivery Map (Frontend + Backend)
 
@@ -296,7 +297,7 @@ This roadmap breaks work into sequential PRs. Each PR is sized to be reviewable 
 - Frontend apps: `apps/portal` profile and preferences settings pages
 - Backend services: `services/gateway` (`/api/v1/profile/*` routing/authz), `services/profile-service` (profile/preferences domain + persistence)
 - Infra dependencies: user identity linkage to Keycloak subject IDs + PostgreSQL persistence for profile records
-- Non-goals: role delegation/admin policy controls (PR16), advanced notification workflows
+- Non-goals: role delegation/admin policy controls, advanced notification workflows
 - E2E coverage: `tests/e2e/specs/portal-profile-preferences.spec.ts`
 
 **Scope**
@@ -313,8 +314,9 @@ This roadmap breaks work into sequential PRs. Each PR is sized to be reviewable 
 - Users cannot read or modify another user profile through API.
 - E2E flow for profile update and persisted preference verification passes.
 
-## Optional Follow-On PRs (after PR12)
-- PR 13: Commission calculator and sales analytics widgets.
-- PR 14: Warehouse safety checklist + baler lock workflow.
-- PR 15: PPC calendar + conference room booking in portal.
-- PR 16: Role delegation/admin tools in profile service UI.
+## Potential Future Features (Unordered Backlog)
+- Business intelligence platform (event-driven ingestion + warehouse + BI tooling): `docs/roadmap/bi_platform_plan.md`
+- Commission calculator and sales analytics widgets.
+- Warehouse safety checklist + baler lock workflow.
+- PPC calendar + conference room booking in portal.
+- Role delegation/admin tools in profile service UI.
