@@ -21,6 +21,15 @@ Bring up full stack (app profile includes infra dependencies):
 docker compose --profile app up -d --build
 ```
 
+Bring up full stack using prebuilt images only (no local `docker build`):
+
+```bash
+# set IMAGE_REGISTRY to your GHCR namespace in .env
+# IMAGE_REGISTRY=ghcr.io/<your-org>
+# optional IMAGE_TAG defaults to main
+docker compose -f docker-compose.yml -f docker-compose.prebuilt.yml --profile app up -d --no-build --pull always
+```
+
 Optional (infra-only debugging, without app services):
 
 ```bash

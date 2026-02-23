@@ -77,3 +77,28 @@ docker compose --profile test run --rm order-service-integration-tests
 # run Playwright golden-path gate (PR2-PR12 + flaky-rate check)
 docker compose --profile test run --rm e2e-tests
 ```
+
+## Quickstart (Prebuilt Images, No Local Build)
+
+```bash
+cp .env.example .env
+
+# set this to your org/user namespace that publishes GHCR images
+# IMAGE_REGISTRY=ghcr.io/<your-org>
+# optional, defaults to main
+# IMAGE_TAG=main
+
+# if GHCR packages are private
+docker login ghcr.io
+
+docker compose --profile infra up -d
+docker compose -f docker-compose.yml -f docker-compose.prebuilt.yml --profile app up -d --no-build --pull always
+```
+
+## Image Publishing (GHCR)
+
+- Workflow: `.github/workflows/build-and-push-images.yml`
+- Trigger: push to `main` when files change under `apps/**` or `services/**`
+- Scope: path-aware per app/service image
+- Tags pushed per changed image: `main` and `sha-<commit>`
+- Bootstrap: run workflow dispatch once with `force_all=true` to publish all images initially

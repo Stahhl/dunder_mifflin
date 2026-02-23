@@ -12,6 +12,7 @@ Run the demo platform with a single command using Docker Compose.
 
 - `docker-compose.yml`: primary stack definition.
 - `docker-compose.override.yml`: local development overrides.
+- `docker-compose.prebuilt.yml`: image overrides for pull-only startup (no local builds).
 - `.env.example`: documented environment variables.
 - `platform/keycloak/realm-export.json`: seeded realm config.
 - `platform/ldap/users.ldif`: seeded users/groups.
@@ -65,6 +66,8 @@ Required variables (example values):
 - `KEYCLOAK_REALM=scranton-branch`
 - `KEYCLOAK_PUBLIC_HOST=host.docker.internal` (used by Grafana OAuth redirect target)
 - `GRAFANA_PUBLIC_HOST=host.docker.internal` (used in Grafana OAuth callback URL)
+- `IMAGE_REGISTRY=ghcr.io/<org-or-user>` (for prebuilt app/service images)
+- `IMAGE_TAG=main` (for prebuilt app/service images)
 
 ## 7. Data Store Topology
 
@@ -91,6 +94,9 @@ Required variables (example values):
 ```bash
 # full demo stack
 docker compose --profile app up -d
+
+# full demo stack with prebuilt app/service images only
+docker compose -f docker-compose.yml -f docker-compose.prebuilt.yml --profile app up -d --no-build --pull always
 
 # infra only
 docker compose --profile infra up -d
