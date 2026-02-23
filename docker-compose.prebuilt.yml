@@ -1,48 +1,48 @@
 services:
   gateway:
-    image: ${IMAGE_REGISTRY:-ghcr.io/dunder-mifflin}/gateway:${IMAGE_TAG:-main}
+    image: ${IMAGE_REGISTRY:-ghcr.io/stahhl}/gateway:${IMAGE_TAG:-main}
     pull_policy: always
 
   profile-service:
-    image: ${IMAGE_REGISTRY:-ghcr.io/dunder-mifflin}/profile-service:${IMAGE_TAG:-main}
+    image: ${IMAGE_REGISTRY:-ghcr.io/stahhl}/profile-service:${IMAGE_TAG:-main}
     pull_policy: always
 
   sales-service:
-    image: ${IMAGE_REGISTRY:-ghcr.io/dunder-mifflin}/sales-service:${IMAGE_TAG:-main}
+    image: ${IMAGE_REGISTRY:-ghcr.io/stahhl}/sales-service:${IMAGE_TAG:-main}
     pull_policy: always
 
   order-service:
-    image: ${IMAGE_REGISTRY:-ghcr.io/dunder-mifflin}/order-service:${IMAGE_TAG:-main}
+    image: ${IMAGE_REGISTRY:-ghcr.io/stahhl}/order-service:${IMAGE_TAG:-main}
     pull_policy: always
 
   inventory-service:
-    image: ${IMAGE_REGISTRY:-ghcr.io/dunder-mifflin}/inventory-service:${IMAGE_TAG:-main}
+    image: ${IMAGE_REGISTRY:-ghcr.io/stahhl}/inventory-service:${IMAGE_TAG:-main}
     pull_policy: always
 
   finance-service:
-    image: ${IMAGE_REGISTRY:-ghcr.io/dunder-mifflin}/finance-service:${IMAGE_TAG:-main}
+    image: ${IMAGE_REGISTRY:-ghcr.io/stahhl}/finance-service:${IMAGE_TAG:-main}
     pull_policy: always
 
   wuphf-service:
-    image: ${IMAGE_REGISTRY:-ghcr.io/dunder-mifflin}/wuphf-service:${IMAGE_TAG:-main}
+    image: ${IMAGE_REGISTRY:-ghcr.io/stahhl}/wuphf-service:${IMAGE_TAG:-main}
     pull_policy: always
 
   portal-web:
-    image: ${IMAGE_REGISTRY:-ghcr.io/dunder-mifflin}/portal-web:${IMAGE_TAG:-main}
+    image: ${IMAGE_REGISTRY:-ghcr.io/stahhl}/portal-web:${IMAGE_TAG:-main}
     pull_policy: always
 
   infinity-web:
-    image: ${IMAGE_REGISTRY:-ghcr.io/dunder-mifflin}/infinity-web:${IMAGE_TAG:-main}
+    image: ${IMAGE_REGISTRY:-ghcr.io/stahhl}/infinity-web:${IMAGE_TAG:-main}
     pull_policy: always
 
   accounting-web:
-    image: ${IMAGE_REGISTRY:-ghcr.io/dunder-mifflin}/accounting-web:${IMAGE_TAG:-main}
+    image: ${IMAGE_REGISTRY:-ghcr.io/stahhl}/accounting-web:${IMAGE_TAG:-main}
     pull_policy: always
 
   wuphf-widget:
-    image: ${IMAGE_REGISTRY:-ghcr.io/dunder-mifflin}/wuphf-widget:${IMAGE_TAG:-main}
+    image: ${IMAGE_REGISTRY:-ghcr.io/stahhl}/wuphf-widget:${IMAGE_TAG:-main}
     pull_policy: always
 
   warehouse-mobile:
-    image: ${IMAGE_REGISTRY:-ghcr.io/dunder-mifflin}/warehouse-mobile:${IMAGE_TAG:-main}
+    image: ${IMAGE_REGISTRY:-ghcr.io/stahhl}/warehouse-mobile:${IMAGE_TAG:-main}
     pull_policy: always

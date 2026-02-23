@@ -83,8 +83,8 @@ docker compose --profile test run --rm e2e-tests
 ```bash
 cp .env.example .env
 
-# set this to your org/user namespace that publishes GHCR images
-# IMAGE_REGISTRY=ghcr.io/<your-org>
+# default in this repo is ghcr.io/stahhl; override only if you publish elsewhere
+# IMAGE_REGISTRY=ghcr.io/<your-org-or-user>
 # optional, defaults to main
 # IMAGE_TAG=main
 

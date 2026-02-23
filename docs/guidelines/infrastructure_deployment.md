@@ -66,7 +66,7 @@ Required variables (example values):
 - `KEYCLOAK_REALM=scranton-branch`
 - `KEYCLOAK_PUBLIC_HOST=host.docker.internal` (used by Grafana OAuth redirect target)
 - `GRAFANA_PUBLIC_HOST=host.docker.internal` (used in Grafana OAuth callback URL)
-- `IMAGE_REGISTRY=ghcr.io/<org-or-user>` (for prebuilt app/service images)
+- `IMAGE_REGISTRY=ghcr.io/stahhl` (default for this repo's published prebuilt images)
 - `IMAGE_TAG=main` (for prebuilt app/service images)
 
 ## 7. Data Store Topology
