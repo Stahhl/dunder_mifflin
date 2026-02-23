@@ -21,7 +21,7 @@ This roadmap breaks work into sequential PRs. Each PR is sized to be reviewable 
 | PR6 | `apps/accounting` | `services/gateway`, `services/finance-service` | Expense approval workflow. |
 | PR7 | `apps/wuphf-widget` integrated into Portal/Infinity/Accounting | `services/gateway`, `services/wuphf-service` | Unified notification UX. |
 | PR8 | `apps/warehouse-mobile` offline queue/sync UX | `services/inventory-service` warehouse ownership + idempotent mutation handling | Offline-first safety and replay. |
-| PR9 | Portal/Infinity/Warehouse/Accounting reliability UX | Gateway + all in-scope domain services observability/error standards | User-facing reliability + tracing. |
+| PR9 | Portal/Infinity/Warehouse/Accounting reliability UX | Gateway + all in-scope domain services observability/error standards | User-facing reliability + tracing, plus observability RBAC lock-down (`it-support`). |
 | PR10 | `tests/e2e` golden-path suite | Full app/backend stack in CI | Merge gate for end-to-end quality. |
 | PR11 | `apps/infinity` CRM leads/clients experience | `services/gateway`, `services/sales-service` | First dedicated Sales CRM domain service rollout. |
 | PR12 | `apps/portal` user profile/preferences | `services/gateway`, `services/profile-service` | User self-service profile and defaults. |
@@ -55,7 +55,7 @@ This roadmap breaks work into sequential PRs. Each PR is sized to be reviewable 
 | PR6 | `tests/e2e/specs/accounting-expense-decision.spec.ts` |
 | PR7 | `tests/e2e/specs/wuphf-notification-widget.spec.ts` |
 | PR8 | `tests/e2e/specs/warehouse-offline-sync.spec.ts` |
-| PR9 | `tests/e2e/specs/reliability-error-state.spec.ts` |
+| PR9 | `tests/e2e/specs/reliability-error-state.spec.ts` + `tests/e2e/specs/observability-access-control.spec.ts` |
 | PR10 | `.github/workflows/pr10-golden-path-gate.yml` + `pnpm test:e2e:gate` aggregate gate |
 | PR11 | `tests/e2e/specs/infinity-crm-client-conversion.spec.ts` |
 | PR12 | `tests/e2e/specs/portal-profile-preferences.spec.ts` |
@@ -230,19 +230,21 @@ This roadmap breaks work into sequential PRs. Each PR is sized to be reviewable 
 **Included Components**
 - Frontend apps: Portal/Infinity/Warehouse/Accounting error boundaries and trace propagation
 - Backend services: gateway + all in-scope domain services tracing, metrics, alerting contracts
-- Infra dependencies: metrics/tracing/alerting stack used by all active services
+- Infra dependencies: metrics/tracing/alerting stack used by all active services, plus Keycloak role mapping for observability access control
 - Non-goals: new line-of-business features
-- E2E coverage: `tests/e2e/specs/reliability-error-state.spec.ts`
+- E2E coverage: `tests/e2e/specs/reliability-error-state.spec.ts`, `tests/e2e/specs/observability-access-control.spec.ts`
 
 **Scope**
 - Add consistent frontend error boundaries and friendly failure states.
 - Add request tracing propagation from frontend to gateway.
 - Create dashboards/alerts for login failures, order latency, shipment sync errors.
+- Lock observability surfaces (Grafana/metrics tooling) behind Keycloak SSO with `it-support` role-based access.
 
 **Acceptance**
 - Users see actionable error UI instead of blank states.
 - Key flows emit trace IDs through frontend + backend hops.
 - Alerts trigger for defined SLO violations.
+- `it-support` can access observability dashboards, while business roles are denied by default.
 
 ## PR 10: End-to-End Quality Gate for Golden Paths
 **User-visible outcome:** Core user workflows become stable and regression-resistant.
