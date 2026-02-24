@@ -317,7 +317,7 @@ This roadmap breaks work into sequential PRs. Each PR is sized to be reviewable 
 - E2E flow for profile update and persisted preference verification passes.
 
 ## Potential Future Features (Unordered Backlog)
-- Business intelligence platform (event-driven ingestion + warehouse + BI tooling): `docs/roadmap/bi_platform_plan.md`
+- Business intelligence platform (event-driven ingestion + warehouse + BI tooling + test gate): `docs/roadmap/bi_platform_plan.md`
 - Commission calculator and sales analytics widgets.
 - Warehouse safety checklist + baler lock workflow.
 - PPC calendar + conference room booking in portal.

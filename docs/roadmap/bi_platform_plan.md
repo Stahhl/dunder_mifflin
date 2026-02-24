@@ -87,9 +87,38 @@ For warehouse tables:
 - Analysts can query curated tables in Metabase without service DB access.
 - Replay of a known event window does not create duplicate facts.
 - Data access is auditable and role-scoped.
+- BI automated test suite runs in CI and fails the merge gate on regression.
 
 ## 9. Non-Goals (Initial Delivery)
 
 - Real-time sub-second streaming analytics.
 - Cross-company enterprise MDM.
 - Replacing existing transactional APIs.
+
+## 10. Test Strategy (Required)
+
+### 10.1 Ingestion Replay and Idempotency Integration Tests
+
+- Scope: `services/bi-ingestion-service`.
+- Method: publish a deterministic event batch to RabbitMQ, replay the same batch, and assert no duplicate rows in curated warehouse tables.
+- Required assertions: unique `event_id` enforcement in raw and curated layers, replay window reprocessing safety, and dead-letter behavior for malformed events.
+
+### 10.2 Docker End-to-End BI Scenario
+
+- Scope: compose profile `bi` with RabbitMQ + ingestion + MinIO + ClickHouse + Metabase.
+- Method: publish sample domain events (`order.created`, `shipment.dispatched`, `expense.decisioned`), wait for ingestion completion, query ClickHouse facts for expected counts/aggregates, and verify Metabase reads configured datasource/tables with read-only credentials.
+- Required assertions: curated facts match published event set, replay does not inflate counts, and BI users cannot mutate warehouse data.
+
+### 10.3 CI Gate Contract
+
+- Add dedicated BI gate workflow (for example `.github/workflows/bi-quality-gate.yml`).
+- Gate commands should include ingestion integration tests, Docker E2E BI scenario tests, and data quality checks (freshness/duplicate/null thresholds).
+- Merge policy: any BI test failure blocks merge to `main`.
+
+## 11. Proposed Test Commands (Planning Baseline)
+
+These command names are planning targets to standardize CI and local execution:
+
+- `pnpm test:bi:integration`
+- `pnpm test:bi:e2e`
+- `pnpm test:bi:gate`
