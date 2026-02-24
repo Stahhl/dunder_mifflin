@@ -62,10 +62,10 @@ For warehouse tables:
 
 ## 7. Rollout Plan
 
-### Phase A: Foundation
+### Phase A: Foundation (Current Active Step)
 
 - Add compose profile `bi` with MinIO, ClickHouse, Metabase.
-- Scaffold `bi-ingestion-service` and consume high-value events (`com.dundermifflin.order.created.v1`, `com.dundermifflin.shipment.dispatched.v1`, `com.dundermifflin.expense.decisioned.v1`).
+- Scaffold `bi-ingestion-service` and consume high-value events (`com.dundermifflin.order.created.v1`, `com.dundermifflin.shipment.dispatched.v1`, `com.dundermifflin.expense.decided.v1`).
 - Write raw + curated order/shipment/expense tables.
 
 ### Phase B: BI Usability
@@ -106,7 +106,7 @@ For warehouse tables:
 ### 10.2 Docker End-to-End BI Scenario
 
 - Scope: compose profile `bi` with RabbitMQ + ingestion + MinIO + ClickHouse + Metabase.
-- Method: publish sample domain events (`order.created`, `shipment.dispatched`, `expense.decisioned`), wait for ingestion completion, query ClickHouse facts for expected counts/aggregates, and verify Metabase reads configured datasource/tables with read-only credentials.
+- Method: publish sample domain events (`order.created`, `shipment.dispatched`, `expense.decided`), wait for ingestion completion, query ClickHouse facts for expected counts/aggregates, and verify Metabase is reachable while BI users remain read-only on the warehouse.
 - Required assertions: curated facts match published event set, replay does not inflate counts, and BI users cannot mutate warehouse data.
 
 ### 10.3 CI Gate Contract

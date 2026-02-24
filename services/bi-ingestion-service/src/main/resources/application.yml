@@ -1,0 +1,45 @@
+server:
+  port: ${SERVER_PORT:8097}
+
+spring:
+  application:
+    name: bi-ingestion-service
+  threads:
+    virtual:
+      enabled: true
+  datasource:
+    url: jdbc:clickhouse://${CLICKHOUSE_HOST:clickhouse}:${CLICKHOUSE_HTTP_PORT_INTERNAL:8123}/${CLICKHOUSE_DB:bi_warehouse}
+    username: ${CLICKHOUSE_INGESTOR_USER:bi_ingestor}
+    password: ${CLICKHOUSE_INGESTOR_PASSWORD:bi_ingestor_password}
+    driver-class-name: com.clickhouse.jdbc.ClickHouseDriver
+  rabbitmq:
+    host: ${RABBITMQ_HOST:rabbitmq}
+    port: ${RABBITMQ_AMQP_PORT:5672}
+    username: ${RABBITMQ_DEFAULT_USER:dunder}
+    password: ${RABBITMQ_DEFAULT_PASS:mifflin}
+    virtual-host: ${RABBITMQ_VHOST:/}
+
+bi:
+  messaging:
+    exchange: ${RABBITMQ_EXCHANGE:dm.domain.events}
+    queue: ${BI_QUEUE:bi.domain-events.q}
+  raw-store:
+    bucket: ${BI_RAW_BUCKET:dmf-bi-raw-events}
+  minio:
+    endpoint: ${MINIO_ENDPOINT:http://minio:9000}
+    access-key: ${MINIO_ROOT_USER:minioadmin}
+    secret-key: ${MINIO_ROOT_PASSWORD:minioadmin}
+  clickhouse:
+    database: ${CLICKHOUSE_DB:bi_warehouse}
+    reader-username: ${CLICKHOUSE_BI_READER_USER:bi_reader}
+    reader-password: ${CLICKHOUSE_BI_READER_PASSWORD:bi_reader_password}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,prometheus
+  endpoint:
+    health:
+      probes:
+        enabled: true

@@ -9,6 +9,14 @@ This roadmap breaks work into sequential PRs. Each PR is sized to be reviewable 
 - IAM/RBAC mapping: `docs/architecture/identity_access.md`
 - Future BI plan: `docs/roadmap/bi_platform_plan.md`
 
+## Current Active Step
+
+- Active workstream: **Business Intelligence Platform - Phase A (foundation)**.
+- Scope in progress:
+  - Docker profile `bi` runtime (`clickhouse`, `minio`, `metabase`, `services/bi-ingestion-service`).
+  - Event ingestion for `order.created.v1`, `shipment.dispatched.v1`, `finance.expense.decided.v1`.
+  - BI E2E replay/idempotency checks (`tests/bi/bi-e2e.mjs`).
+
 ## Component Delivery Map (Frontend + Backend)
 
 | PR | Frontend in Scope | Backend in Scope | Notes |
@@ -317,7 +325,7 @@ This roadmap breaks work into sequential PRs. Each PR is sized to be reviewable 
 - E2E flow for profile update and persisted preference verification passes.
 
 ## Potential Future Features (Unordered Backlog)
-- Business intelligence platform (event-driven ingestion + warehouse + BI tooling + test gate): `docs/roadmap/bi_platform_plan.md`
+- Business intelligence platform (event-driven ingestion + warehouse + BI tooling + test gate, currently Phase A in progress): `docs/roadmap/bi_platform_plan.md`
 - Commission calculator and sales analytics widgets.
 - Warehouse safety checklist + baler lock workflow.
 - PPC calendar + conference room booking in portal.

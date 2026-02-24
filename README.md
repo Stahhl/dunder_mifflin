@@ -58,6 +58,7 @@ This repository contains the implementation plan and delivery docs for a demo ER
 - Backends in active use: `services/gateway`, `services/sales-service`, `services/order-service`, `services/inventory-service`, `services/finance-service`, `services/wuphf-service`, and `services/profile-service`.
 - Warehouse shipment API ownership is now in `services/inventory-service`, with `services/order-service` consuming `shipment.dispatched.v1` to keep order status/timeline in sync.
 - Playwright golden-path coverage now aggregates required PR2-PR12 specs and is enforced via CI gate in PR10.
+- BI platform Phase A is now in progress with `services/bi-ingestion-service` and the `bi` Docker profile (`clickhouse`, `minio`, `metabase`) for analytics ingestion and replay/idempotency checks.
 - Roadmap/contracts docs remain the source of truth for follow-on backlog scope.
 
 ## Quickstart (Docker-Only)
@@ -77,6 +78,10 @@ docker compose --profile test run --rm order-service-integration-tests
 
 # run Playwright golden-path gate (PR2-PR12 + flaky-rate check)
 docker compose --profile test run --rm e2e-tests
+
+# run BI stack + BI replay/idempotency e2e checks
+docker compose --profile bi up -d --build
+docker compose --profile bi --profile test run --rm bi-e2e-tests
 ```
 
 ## Quickstart (Prebuilt Images, No Local Build)

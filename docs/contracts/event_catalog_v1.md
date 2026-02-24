@@ -30,6 +30,7 @@ Format: CloudEvents 1.0 JSON messages over RabbitMQ (AMQP 0-9-1).
 | `inventory.order-events.q` | `inventory-service` | `order.created.v1` |
 | `order.inventory-events.q` | `order-service` | `inventory.stock.*.v1`, `shipment.dispatched.v1` |
 | `wuphf.domain-events.q` | `wuphf-service` | `order.*.v1`, `shipment.*.v1`, `finance.expense.*.v1` |
+| `bi.domain-events.q` | `bi-ingestion-service` | `order.created.v1`, `shipment.dispatched.v1`, `finance.expense.decided.v1` |
 | `notification.readmodel.q` | notification read model | `notification.created.v1` |
 
 ## 3. Event Types

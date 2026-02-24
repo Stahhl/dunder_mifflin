@@ -1,4 +1,4 @@
-# Manual Testing Guide (PR1-PR12)
+# Manual Testing Guide (PR1-PR12 + BI Phase A)
 
 This runbook explains how to manually validate the currently implemented user workflows using Docker Compose and seeded users.
 
@@ -241,4 +241,11 @@ Golden E2E gate:
 
 ```bash
 docker compose --profile test run --rm e2e-tests
+```
+
+BI replay/idempotency E2E:
+
+```bash
+docker compose --profile bi up -d --build
+docker compose --profile bi --profile test run --rm bi-e2e-tests
 ```
