@@ -6,7 +6,7 @@ This repository contains the implementation plan and delivery docs for a demo ER
 
 ### Roadmap
 - [Product Delivery TODO (PR-by-PR)](./docs/roadmap/pr_delivery_todo.md)
-- [Business Intelligence Platform Plan (Future)](./docs/roadmap/bi_platform_plan.md)
+- [Business Intelligence Platform Plan (Phase A in progress)](./docs/roadmap/bi_platform_plan.md)
 
 ### Architecture
 - [System Overview](./docs/architecture/system_overview.md)
