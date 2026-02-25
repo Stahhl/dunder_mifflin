@@ -10,6 +10,7 @@ This repository contains the implementation plan and delivery docs for a demo ER
 
 ### Architecture
 - [System Overview](./docs/architecture/system_overview.md)
+- [System Interaction Diagrams](./docs/architecture/system_interaction_diagrams.md)
 - [Datastore Overview](./docs/architecture/datastore_overview.md)
 - [Identity & Access](./docs/architecture/identity_access.md)
 - [Frontend Overview](./docs/architecture/frontend_overview.md)
